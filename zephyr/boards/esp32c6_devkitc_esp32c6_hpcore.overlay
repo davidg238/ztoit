@@ -1,0 +1,10 @@
+/* The WROOM-1-N8 has 8 MB of flash; the board's default table uses the lower
+ * 4 MB. The upper 4 MB is Toit's flash registry (flash_registry_zephyr.cc). */
+&flash0 {
+	partitions {
+		toit_partition: partition@400000 {
+			label = "toit";
+			reg = <0x400000 DT_SIZE_M(4)>;
+		};
+	};
+};

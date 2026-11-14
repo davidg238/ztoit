@@ -1,0 +1,16 @@
+*** Booting Zephyr OS build v4.2.0-12-gbc47c6fab9cc ***
+thread: run=0 net_if_up=-120, joining...
+thread: attached role=2 in 3686 ms
+thread: ECHO OK 10 B in 15 ms (attempt 1)
+ztoit: program 57344 B, installed in flash in 426 ms
+echo 0: 17 B in 26 ms from fd77:9957:d9f3:1:2935:a821:1d56:c329:7777
+echo 1: 17 B in 35 ms from fd77:9957:d9f3:1:2935:a821:1d56:c329:7777
+echo 2: 17 B in 18 ms from fd77:9957:d9f3:1:2935:a821:1d56:c329:7777
+echo 3: 17 B in 15 ms from fd77:9957:d9f3:1:2935:a821:1d56:c329:7777
+echo 4: 17 B in 16 ms from fd77:9957:d9f3:1:2935:a821:1d56:c329:7777
+UDP ECHO OK 5/5
+ztoit: exit reason 1 value 0
+
+gateway (journalctl -u udp-echo6):
+2026-11-14T13:25:41-0700 echo 10B <-> [fdc5:9109:9afe:97ea:40db:ecd1:b0da:f1f3%0]:59926
+2026-11-14T13:25:42-0700 echo 17B <-> [fdc5:9109:9afe:97ea:40db:ecd1:b0da:f1f3%0]:36317  (x5)

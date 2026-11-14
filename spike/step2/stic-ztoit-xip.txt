@@ -1,0 +1,51 @@
+ESP-ROM:esp32c6-20220919
+Build:Sep 19 2022
+rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:2
+load:0x40800000,len:0x94a0
+load:0x408094b0,len:0xcfe0
+SHA-256 comparison failed:
+Calculated: 1f9e0f0c7a77cb6bfd03da1896e12dfaa4da664faa2ef38e89561114e4d1b4f7
+Expected: 00000000409b0000000000000000000000000000000000000000000000000000
+Attempting to boot anyway...
+entry 0x408023aa
+I (69) soc_init: ESP Simple boot
+I (69) soc_init: compile time Nov 14 2026 13:10:56
+I (70) soc_init: chip revision: v0.0
+I (70) flash_init: SPI Speed      : 80MHz
+I (72) flash_init: SPI Mode       : DIO
+I (76) flash_init: SPI Flash Size : 8MB
+I (80) boot: DRAM: lma 0x00000020 vma 0x40800000 len 0x94a0   (38048)
+I (86) boot: DRAM: lma 0x000094c8 vma 0x408094b0 len 0xcfe0   (53216)
+I (92) boot: IRAM: lma 0x000164b8 vma 0x00000000 len 0x9b40   (39744)
+I (98) boot: IMAP: lma 0x00020000 vma 0x42800000 len 0xa0ac   (41132)
+I (104) boot: IRAM: lma 0x0002a0b4 vma 0x00000000 len 0x5f44   (24388)
+I (110) boot: IMAP: lma 0x00030000 vma 0x42000000 len 0x2bc28  (179240)
+I (117) boot: Image with 6 segments
+I (120) boot: IROM segment: paddr=00030000h, vaddr=42000000h, size=2BC28h (179240) map
+I (128) boot: DROM segment: paddr=00020000h, vaddr=42800000h, size=0A0B0h ( 41136) map
+I (146) boot: libc heap size 215 kB.
+I (147) spi_flash: detected chip: gd
+I (147) spi_flash: flash io: dio
+*** Booting Zephyr OS build v4.2.0-12-gbc47c6fab9cc ***
+ztoit: program 45056 B, already in flash
+Starting STIC benchmark...
+Full GC count 1
+Full GC count 2
+Full GC count 3
+STIC benchmark for Toit v2.0.0 ---------------------------
+   (smaller numbers are better)
+alloc               9.6
+array write         26.4
+dictionary write    4.0
+float math          31.4
+integer math        13.7
+collection iterate  17.7
+collection write    7.0
+string compare      2.0
+hanoi               0.0
+-------------------------------------------
+ztoit: exit reason 1 value 0
+
+elapsed 335
