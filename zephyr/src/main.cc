@@ -94,12 +94,12 @@ static int run() {
 }  // namespace toit
 
 // A USB CDC ACM console (nRF52840 dongle) drops output until the host opens
-// the port, so wait for DTR: a run's log then starts at its first line.
+// the port, so wait for DTR, but at most 3 s: on a wall wart there is no host.
 static void wait_for_console() {
 #if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
   const struct device* console = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
   uint32_t dtr = 0;
-  while (!dtr) {
+  for (int i = 0; i < 30 && !dtr; i++) {
     uart_line_ctrl_get(console, UART_LINE_CTRL_DTR, &dtr);
     k_msleep(100);
   }

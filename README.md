@@ -33,7 +33,7 @@ host compiler, and an ESP32-C6 board or an nRF52840 dongle.
 
 nRF52840 dongle: `west build -b nrf52840dongle/nrf52840 -d build-nrf ztoit/zephyr`, press the dongle's RESET
 button, then `ztoit/tools/nrf-flash.sh build-nrf` (needs `nrfutil` with `nrf5sdk-tools`). Console is USB CDC ACM;
-the app waits for the host to open it.
+the app waits up to 3 s for the host to open it, then runs anyway.
 
 Thread: copy `zephyr/prj_thread.local.conf.example` to `prj_thread.local.conf`, fill in your network's
 dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (either board).
