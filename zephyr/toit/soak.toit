@@ -1,0 +1,110 @@
+// ztoit Thread soak (ztoit#4): UDP and TCP echoes to gw85224-01 (:7777, udp-echo6
+// and tcp-echo6) every ROUND-MS, forever. Each failure prints at once; every
+// SUMMARY-ROUNDS rounds a summary line prints counts, round-trip times and the
+// process heap, so leaks and drift show over hours. One persistent TCP
+// connection, re-opened after any failure.
+import net
+import net.udp
+import net.tcp
+import system
+
+GATEWAY ::= "fdc5:9109:9afe:97ea:9541:d963:f8d9:8567"  // Mesh-local EID.
+PORT ::= 7777
+ROUND-MS ::= 5_000
+TIMEOUT-MS ::= 3_000
+SUMMARY-ROUNDS ::= 60  // Five minutes.
+UDP-SIZE ::= 64
+TCP-SIZE ::= 256
+
+class Stats:
+  name/string
+  ok := 0
+  failed := 0
+  min-ms := 1_000_000
+  max-ms := 0
+  total-ms := 0
+
+  constructor .name:
+
+  record ms/int:
+    ok++
+    total-ms += ms
+    min-ms = min min-ms ms
+    max-ms = max max-ms ms
+
+  stringify -> string:
+    mean := ok == 0 ? 0 : total-ms / ok
+    return "$name ok=$ok failed=$failed rtt min/mean/max=$(ok == 0 ? 0 : min-ms)/$mean/$max-ms ms"
+
+  reset-window -> none:
+    min-ms = 1_000_000
+    max-ms = 0
+    total-ms = 0
+
+read-exactly socket/tcp.Socket size/int -> ByteArray:
+  result := ByteArray 0
+  while result.size < size:
+    chunk := socket.in.read
+    if not chunk: throw "closed after $result.size of $size B"
+    result += chunk
+  return result
+
+// Fills `bytes` with a pattern derived from `seq`, so stale echoes don't match.
+payload size/int seq/int -> ByteArray:
+  return ByteArray size: (seq + it * 7) & 0xff
+
+main:
+  network := net.open
+  print "soak: start, address $network.address, round $ROUND-MS ms"
+  target := net.SocketAddress (net.IpAddress.parse GATEWAY) PORT
+  udp-socket := network.udp-open
+  tcp-socket/tcp.Socket? := null
+  udp-stats := Stats "udp"
+  tcp-stats := Stats "tcp"
+  tcp-connects := 0
+  round := 0
+  while true:
+    round++
+    round-start := Time.monotonic-us
+    start := round-start
+
+    // UDP: one datagram, wait for its echo; drop stale echoes from late rounds.
+    message := payload UDP-SIZE round
+    error := catch:
+      udp-socket.send (udp.Datagram message target)
+      with-timeout --ms=TIMEOUT-MS:
+        while true:
+          datagram := udp-socket.receive
+          if datagram.data == message: break
+      udp-stats.record (Time.monotonic-us - start) / 1000
+    if error:
+      udp-stats.failed++
+      print "soak: round $round udp FAILED: $error"
+
+    // TCP: one message on the persistent connection, re-opened after a failure.
+    start = Time.monotonic-us
+    message = payload TCP-SIZE round
+    error = catch:
+      if not tcp-socket:
+        tcp-socket = network.tcp-connect target
+        tcp-connects++
+      with-timeout --ms=TIMEOUT-MS:
+        tcp-socket.out.write message
+        reply := read-exactly tcp-socket TCP-SIZE
+        if reply != message: throw "mismatch"
+      tcp-stats.record (Time.monotonic-us - start) / 1000
+    if error:
+      tcp-stats.failed++
+      print "soak: round $round tcp FAILED: $error"
+      if tcp-socket:
+        catch: tcp-socket.close
+        tcp-socket = null
+
+    if round % SUMMARY-ROUNDS == 0:
+      stats := system.process-stats --gc
+      print "soak: round $round uptime $(Time.monotonic-us / 1_000_000) s | $udp-stats | $tcp-stats connects=$tcp-connects | heap allocated=$stats[system.STATS-INDEX-ALLOCATED-MEMORY] reserved=$stats[system.STATS-INDEX-RESERVED-MEMORY]"
+      udp-stats.reset-window
+      tcp-stats.reset-window
+
+    elapsed-ms := (Time.monotonic-us - round-start) / 1000
+    sleep --ms=(max 0 (ROUND-MS - elapsed-ms))
