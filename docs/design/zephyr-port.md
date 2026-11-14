@@ -42,3 +42,17 @@ Code: toit `zephyr-port` branch (`src/*_zephyr.cc`); ztoit `modules/toit/` (Zeph
   default 16 a 1000 B write is accepted and never sent. RX and packet counts stay default (re-measured 5/5).
 - **Test echo servers** on gw85224-01, port 7777: rete's `udp-echo6` (system unit) and ztoit's `tcp-echo6` (user
   unit, `tools/gateway/`).
+
+## Addendum 2026-11-14 — peripherals come from Zephyr, not Toit
+
+ztoit targets Zephyr only; the interpreter is the product, drivers are the Zephyr community's. Toit's
+rewrite-every-driver-in-Toit model is not followed here.
+
+- **Wiring is devicetree.** Toit names a device by devicetree node label or alias, never by pin number.
+- **Sensors:** one generic primitive over Zephyr's sensor API (fetch + channel read); any Zephyr sensor driver
+  works with no per-device code. First: `bosch,bmp180`.
+- **Inputs** (switches, buttons): Zephyr's input subsystem (`gpio-keys`, its debounce) delivers events into the
+  Toit event loop.
+- **Raw `gpio`/`i2c`/`spi`** primitives are thin shims over Zephyr's APIs: an escape hatch, and existing Toit
+  driver packages can run on them. No ESP-IDF resource code, no Toit driver for a part Zephyr already supports.
+- **Cost:** a part Zephyr lacks (e.g. VL6180) needs a Zephyr driver (upstreamable) or the raw-bus escape hatch.
