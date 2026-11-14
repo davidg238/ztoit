@@ -1,0 +1,10 @@
+config TOIT
+	bool "Toit VM core"
+	depends on CPP
+	help
+	  Compile the Toit VM core from $TOIT_SRC (see ztoit's env.sh).
+
+config TOIT_HEAP_SIZE
+	int "Bytes in the static arena Toit heap pages come from"
+	default 163840
+	depends on TOIT

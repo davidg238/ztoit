@@ -1,0 +1,22 @@
+[toit] INFO: starting <v2.0.0>
+[toit] DEBUG: clearing RTC memory: invalid checksum
+[toit] INFO: running on ESP32C6 - revision 0.0
+Starting STIC benchmark...
+Full GC count 1
+Full GC count 2
+Full GC count 3
+STIC benchmark for Toit v2.0.0 ---------------------------
+   (smaller numbers are better)
+alloc               20.3
+array write         25.7
+dictionary write    4.4
+float math          56.1
+integer math        13.5
+collection iterate  17.7
+collection write    9.2
+string compare      1.9
+hanoi               0.0
+-------------------------------------------
+[toit] INFO: entering deep sleep without wakeup time
+
+elapsed 449

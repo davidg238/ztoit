@@ -1,0 +1,4 @@
+name: toit
+build:
+  cmake: .
+  kconfig: Kconfig

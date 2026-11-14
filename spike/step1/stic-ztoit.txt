@@ -1,0 +1,21 @@
+*** Booting Zephyr OS build v4.2.0-12-gbc47c6fab9cc ***
+ztoit: program image 46464 B, relocated 45056 B
+Starting STIC benchmark...
+Full GC count 1
+Full GC count 2
+Full GC count 3
+STIC benchmark for Toit v2.0.0 ---------------------------
+   (smaller numbers are better)
+alloc               9.1
+array write         25.7
+dictionary write    3.6
+float math          30.8
+integer math        13.2
+collection iterate  17.3
+collection write    6.7
+string compare      1.9
+hanoi               0.0
+-------------------------------------------
+ztoit: exit reason 1 value 0
+
+elapsed 325
