@@ -6,7 +6,7 @@ first on the ESP32-C6. The VM changes live in the Toit fork's
 (`modules/toit/`), the application (`zephyr/`), and the measurements (`spike/`). The backend seams come from
 [rete](https://github.com/davidg238/rete).
 
-## What works (ESP32-C6, 2026-11-14)
+## What works (2026-11-14)
 
 | Step | Result | Record |
 |---|---|---|
@@ -21,7 +21,7 @@ Design decisions: `docs/design/zephyr-port.md`. Known issues and open work: GitH
 ## Build
 
 Needs the Zephyr SDK 0.17.4, the [Toit SDK v2.0.0](https://github.com/toitlang/toit/releases/tag/v2.0.0) for the
-host compiler, and an ESP32-C6 board.
+host compiler, and an ESP32-C6 board or an nRF52840 dongle.
 
     west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update
     west blobs fetch hal_espressif
