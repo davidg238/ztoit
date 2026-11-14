@@ -37,3 +37,8 @@ Code: toit `zephyr-port` branch (`src/*_zephyr.cc`); ztoit `modules/toit/` (Zeph
   `CONFIG_OPENTHREAD_SLAAC` (without it the node has only mesh-local and link-local addresses).
 - **Library changes** live on the fork's `lib/` (IPv6 `IpAddress.parse`, `Client.address`/`resolve` on IPv6-only
   stacks). Programs compile with `tools/fork-sdk.sh`'s SDK: stock v2.0.0 binaries + the fork's `lib/`.
+- **TCP** (`tcp_zephyr.cc`) uses the same event source and re-arm rule. Zephyr sizes TCP's send window from the
+  TX buffer pool (count × 128 B / 3), so the Thread layer sets `CONFIG_NET_BUF_TX_COUNT=64` (window 2730): at the
+  default 16 a 1000 B write is accepted and never sent. RX and packet counts stay default (re-measured 5/5).
+- **Test echo servers** on gw85224-01, port 7777: rete's `udp-echo6` (system unit) and ztoit's `tcp-echo6` (user
+  unit, `tools/gateway/`).

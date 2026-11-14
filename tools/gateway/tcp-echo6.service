@@ -1,0 +1,9 @@
+[Unit]
+Description=TCP6 echo server (ztoit#4 Thread TCP tests)
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.local/bin/tcp_echo6.py 7777
+Restart=always
+
+[Install]
+WantedBy=default.target

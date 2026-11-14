@@ -11,7 +11,7 @@ if(CONFIG_TOIT)
   list(FILTER toit_core EXCLUDE REGEX
     "/(toit|toit_run|toit_run_image|vessel|run|main_utf_8_helper|error_win|toit_esp32|toit_ec618)\\.cc$")
   list(APPEND toit_core ${T}/event_sources/timer.cc ${T}/resources/timer.cc
-    ${T}/event_sources/zsock_zephyr.cc ${T}/resources/udp_zephyr.cc)
+    ${T}/event_sources/zsock_zephyr.cc ${T}/resources/udp_zephyr.cc ${T}/resources/tcp_zephyr.cc)
   set(toit_gc
     ${T}/third_party/dartino/object_memory.cc
     ${T}/third_party/dartino/object_memory_copying.cc
