@@ -1,10 +1,9 @@
 # Focus
 
-- **Next session starts with (2026-11-14):** branch `main`, focus #4. `net.open`, UDP and TCP work over Thread
-  (#4 comments). First action: an echo soak (UDP and TCP) over the mesh, then decide whether DNS/AAAA is needed.
-  Serial capture resets the board on open; end captures on `ztoit: exit reason`, never on `ECHO OK` (the C smoke
-  test prints that first).
-- **Board state:** the C6 runs the Thread build (`udp_echo.toit`); gw85224-01 runs user unit `tcp-echo6` (:7777). Thread build: `west build -d <dir> --
+- **Next session starts with (2026-11-14):** branch `main`, focus #4. Soak running since 14:32: first action is
+  `grep -a "soak: round\|FAILED" ~/.local/state/ztoit/soak-20261114.log | tail` and record the result on #4. Then
+  decide whether DNS/AAAA is needed. Serial capture resets the board on open; end captures on `ztoit: exit reason`.
+- **Board state:** the C6 runs the soak (`soak.toit`), logged by a detached `tools/serial_log.py` (kill it before flashing); gw85224-01 runs user unit `tcp-echo6` (:7777). Thread build: `west build -d <dir> --
   -DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf" -DEXTRA_DTC_OVERLAY_FILE=thread.overlay`; the
   dataset file is gitignored (copy of rete's `prj_esp32c6_thread.local.conf`). Programs compile with the
   fork-lib SDK (`tools/fork-sdk.sh`, `TOIT_HOST` in `env.sh`). `rete-custos` stays disabled (`CLAUDE.md`).
