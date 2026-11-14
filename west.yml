@@ -1,0 +1,18 @@
+# ztoit's west manifest: `west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update`.
+# Pins the Zephyr fork (v4.2.0 + ESP32-C6 802.15.4 fixes) and the Toit fork's zephyr-port branch.
+manifest:
+  remotes:
+    - name: davidg238
+      url-base: https://github.com/davidg238
+  projects:
+    - name: zephyr
+      remote: davidg238
+      revision: bc47c6fab9cc9f39f57864f328758158a67c9d0d  # tuvm-c6-radio-fix
+      import:
+        name-allowlist: [hal_espressif, hal_nordic, cmsis, cmsis_6, mbedtls, openthread]
+    - name: toit
+      remote: davidg238
+      revision: 5cd6f90a91702ed5e02a31a55af9cf4b17c2b995  # zephyr-port
+      path: toit
+  self:
+    path: ztoit

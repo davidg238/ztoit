@@ -1,2 +1,4 @@
 zephyr/build/
 prj_thread.local.conf
+spike/baseline/base.envelope
+spike/baseline/hello.snapshot
