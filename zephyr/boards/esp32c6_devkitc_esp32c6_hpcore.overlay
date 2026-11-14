@@ -8,3 +8,9 @@
 		};
 	};
 };
+
+/* The C6's 802.15.4 radio (disabled in esp32c6_common.dtsi). Its driver builds
+ * only with CONFIG_IEEE802154 (prj_thread.conf). */
+&ieee802154 {
+	status = "okay";
+};

@@ -1,4 +1,0 @@
-/* Thread builds only: the C6's 802.15.4 radio (disabled in esp32c6_common.dtsi). */
-&ieee802154 {
-	status = "okay";
-};

@@ -19,10 +19,11 @@
 #include "third_party/dartino/object_memory.h"
 #include "thread.h"
 
-extern "C" {
-  extern unsigned char program_image[];
-  extern unsigned int program_image_len;
-}
+// The boot program's relocatable image, in flash (zephyr/CMakeLists.txt).
+static const unsigned char program_image[] __aligned(4) = {
+#include "program_image.inc"
+};
+static const unsigned program_image_len = sizeof(program_image);
 
 namespace toit {
 
@@ -38,7 +39,7 @@ static const Program* install_program() {
   word relocated_size = (image_size / CHUNK_WORD_SIZE) * WORD_BIT_SIZE;
   word allocation_size = Utils::round_up(relocated_size, FLASH_PAGE_SIZE);
 
-  FlashAllocation::Header image_header(*reinterpret_cast<FlashAllocation::Header*>(&program_image[WORD_SIZE]));
+  FlashAllocation::Header image_header(*reinterpret_cast<const FlashAllocation::Header*>(&program_image[WORD_SIZE]));
   const FlashAllocation* installed = FlashRegistry::allocation(PROGRAM_OFFSET);
   if (installed != null && installed->is_program() &&
       memcmp(installed->id(), image_header.id(), FlashAllocation::Header::ID_SIZE) == 0) {
@@ -56,7 +57,7 @@ static const Program* install_program() {
   for (int i = 0; i < image_word_size; i += CHUNK_WORD_SIZE) {
     bool first = output.empty();
     word offset = FlashRegistry::offset(output.cursor());
-    output.write(reinterpret_cast<word*>(&program_image[i * WORD_SIZE]), CHUNK_WORD_SIZE, buffer);
+    output.write(reinterpret_cast<word*>(const_cast<unsigned char*>(&program_image[i * WORD_SIZE])), CHUNK_WORD_SIZE, buffer);
     // The header goes last (commit below): only a complete write is valid.
     word skip = first ? sizeof(FlashAllocation::Header) : 0;
     if (!FlashRegistry::write_chunk(reinterpret_cast<uint8*>(buffer) + skip, offset + skip,
