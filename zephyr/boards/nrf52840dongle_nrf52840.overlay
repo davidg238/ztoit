@@ -1,0 +1,21 @@
+/* nRF52840 dongle, no MCUboot: the nRF5 bootloader loads the app at 0x1000
+ * (FLASH_LOAD_OFFSET). App 0x1000-0xa0000 (CONFIG_FLASH_LOAD_SIZE in the board
+ * .conf turns overflow into a link error); Toit's flash registry takes the
+ * former MCUboot slots up to the board's storage partition (OpenThread settings). */
+/delete-node/ &boot_partition;
+/delete-node/ &slot1_partition;
+
+/* The board's chosen code partition; resized to the app region. Not used for
+ * linking (FLASH_LOAD_OFFSET/SIZE are) but kept so /chosen resolves. */
+&slot0_partition {
+	reg = <0x00001000 0x0009f000>;
+};
+
+&flash0 {
+	partitions {
+		toit_partition: partition@a0000 {
+			label = "toit";
+			reg = <0x000a0000 0x0003c000>;
+		};
+	};
+};
