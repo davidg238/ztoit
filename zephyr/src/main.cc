@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
 
 #include "top.h"
 #include "flash_allocation.h"
@@ -91,7 +92,21 @@ static int run() {
 
 }  // namespace toit
 
+// A USB CDC ACM console (nRF52840 dongle) drops output until the host opens
+// the port, so wait for DTR: a run's log then starts at its first line.
+static void wait_for_console() {
+#if DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart)
+  const struct device* console = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+  uint32_t dtr = 0;
+  while (!dtr) {
+    uart_line_ctrl_get(console, UART_LINE_CTRL_DTR, &dtr);
+    k_msleep(100);
+  }
+#endif
+}
+
 int main() {
+  wait_for_console();
 #ifdef CONFIG_NET_L2_OPENTHREAD
   ztoit_thread_up();
 #endif

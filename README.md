@@ -14,6 +14,7 @@ first on the ESP32-C6. The VM changes live in the Toit fork's
 | 1 | VM core boots under Zephyr; STIC benchmark at least as fast as stock on every row | `spike/step1/` |
 | 2 | Programs installed in a flash registry and run in place (XIP); UDP over IPv6 on Thread | `spike/step2/` |
 | 3 | `net.open` provider; TCP over IPv6 on Thread | `zephyr/toit/tcp_echo.toit` |
+| 4 | Second SoC: nRF52840 dongle runs hello (8 tasks) from its flash registry | #6 |
 
 Design decisions: `docs/design/zephyr-port.md`. Known issues and open work: GitHub issues.
 
@@ -29,6 +30,10 @@ host compiler, and an ESP32-C6 board.
     export TOIT_HOST=$(ztoit/tools/fork-sdk.sh)
     west build -b esp32c6_devkitc/esp32c6/hpcore -d build ztoit/zephyr -- -DPROGRAM=$PWD/ztoit/zephyr/toit/hello.toit
     west flash -d build
+
+nRF52840 dongle: `west build -b nrf52840dongle/nrf52840 -d build-nrf ztoit/zephyr`, press the dongle's RESET
+button, then `ztoit/tools/nrf-flash.sh build-nrf` (needs `nrfutil` with `nrf5sdk-tools`). Console is USB CDC ACM;
+the app waits for the host to open it.
 
 Thread: copy `zephyr/prj_thread.local.conf.example` to `prj_thread.local.conf`, fill in your network's
 dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf" -DEXTRA_DTC_OVERLAY_FILE=thread.overlay`.
