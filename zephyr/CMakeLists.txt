@@ -17,6 +17,7 @@ add_custom_command(
   COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/toit/boot.toit ${GEN}/boot.toit
   COMMAND ${CMAKE_COMMAND} -E copy ${PROGRAM} ${GEN}/app.toit
   COMMAND ${CMAKE_COMMAND} -E copy $ENV{TOIT_SRC}/system/services.toit ${GEN}/services.toit
+  COMMAND ${CMAKE_COMMAND} -E copy $ENV{TOIT_SRC}/system/extensions/shared/network_base.toit ${GEN}/network_base.toit
   COMMAND $ENV{TOIT_HOST} compile --snapshot -O2 -o ${GEN}/program.snapshot ${GEN}/boot.toit
   COMMAND $ENV{TOIT_HOST} tool snapshot-to-image --format=binary -m32
           -o ${GEN}/program.image ${GEN}/program.snapshot

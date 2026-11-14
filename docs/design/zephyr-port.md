@@ -32,4 +32,8 @@ Code: toit `zephyr-port` branch (`src/*_zephyr.cc`); ztoit `modules/toit/` (Zeph
   EAGAIN; the Toit monitor processes that notification after its `clear-state`, so no wakeup is lost. An
   eventfd wakes the poll on register, re-arm and close; only the poll thread closes fds.
 - **UDP is IPv6-only** (`udp_zephyr.cc`): 16-byte addresses; the library's 4-byte `#[0,0,0,0]` bind means `::`.
-  No network service yet, so programs use `net.modules.udp` directly, not `net.open`.
+- **`net.open`** is served by `ZephyrNetworkProvider` in `boot.toit` (toit's `network_base.toit`), `PROXY-NONE`
+  like the host: sockets run in the client. `network.address` is the OMR address, so the Thread layer enables
+  `CONFIG_OPENTHREAD_SLAAC` (without it the node has only mesh-local and link-local addresses).
+- **Library changes** live on the fork's `lib/` (IPv6 `IpAddress.parse`, `Client.address`/`resolve` on IPv6-only
+  stacks). Programs compile with `tools/fork-sdk.sh`'s SDK: stock v2.0.0 binaries + the fork's `lib/`.
