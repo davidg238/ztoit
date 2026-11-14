@@ -23,20 +23,23 @@ class Stats:
   min-ms := 1_000_000
   max-ms := 0
   total-ms := 0
+  window-ok := 0  // Echoes since the last summary: the window min/mean/max cover.
 
   constructor .name:
 
   record ms/int:
     ok++
+    window-ok++
     total-ms += ms
     min-ms = min min-ms ms
     max-ms = max max-ms ms
 
   stringify -> string:
-    mean := ok == 0 ? 0 : total-ms / ok
-    return "$name ok=$ok failed=$failed rtt min/mean/max=$(ok == 0 ? 0 : min-ms)/$mean/$max-ms ms"
+    mean := window-ok == 0 ? 0 : total-ms / window-ok
+    return "$name ok=$ok failed=$failed window rtt min/mean/max=$(window-ok == 0 ? 0 : min-ms)/$mean/$max-ms ms"
 
   reset-window -> none:
+    window-ok = 0
     min-ms = 1_000_000
     max-ms = 0
     total-ms = 0
