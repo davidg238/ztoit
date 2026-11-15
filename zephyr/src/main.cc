@@ -43,7 +43,7 @@ static const Program* install_program() {
   const FlashAllocation* installed = FlashRegistry::allocation(PROGRAM_OFFSET);
   if (installed != null && installed->is_program() &&
       memcmp(installed->id(), image_header.id(), FlashAllocation::Header::ID_SIZE) == 0) {
-    printf("ztoit: program %d B, already in flash\n", static_cast<int>(installed->size()));
+    printf("ztoit: program %d B, already in the registry\n", static_cast<int>(installed->size()));
     return static_cast<const Program*>(installed);
   }
 
@@ -70,7 +70,7 @@ static const Program* install_program() {
   const FlashAllocation::Header header(image.begin(), FLASH_ALLOCATION_TYPE_PROGRAM,
                                        image_header.id(), program_size, metadata);
   if (!FlashAllocation::commit(image.begin(), program_size, &header)) FATAL("commit failed");
-  printf("ztoit: program %d B, installed in flash in %d ms\n",
+  printf("ztoit: program %d B, installed in the registry in %d ms\n",
          static_cast<int>(relocated_size), static_cast<int>(k_uptime_get() - start));
   return static_cast<const Program*>(FlashRegistry::allocation(PROGRAM_OFFSET));
 }

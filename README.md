@@ -4,16 +4,19 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 
 **What the spike shows:**
 
-- **The Toit interpreter runs on Zephyr**, on two SoCs:
+- **The Toit interpreter runs on Zephyr**, on three SoCs:
   - ESP32-C6 (RISC-V)
   - nRF52840 (Arm Cortex-M4)
+  - RP2350B (Arm Cortex-M33)
 
   Stock Toit needed one VM change, in the flash registry.
-- **Programs run from flash in place (XIP)**, installed in a flash registry, on both chips.
-- **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on both chips; the nRF52840 dongle runs
-  a UDP + TCP echo soak on a wall wart.
+- **Programs run from flash in place (XIP)**, installed in a flash registry, on the C6 and the nRF52840
+  (the RP2350B installs into RAM: Zephyr has no flash driver for its QSPI controller yet).
+- **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on the C6 and the nRF52840; the nRF52840
+  dongle runs a UDP + TCP echo soak on a wall wart. (The RP2350B has no radio.)
 - **At least as fast as stock Toit** on a simple benchmark ([STIC](https://github.com/davidg238/performance_stic), same ESP32-C6, v2.0.0 both sides):
   interpreter-bound rows match, allocation-heavy rows are 1.2–2.2× faster (cause not yet measured, #2).
+  STIC on all three CPUs: `spike/step4/`.
 - **Peripherals will come from Zephyr's drivers** (devicetree, sensor and input APIs), not Toit rewrites (#7).
 
 Not yet: DNS, Toit's full `system/` containers, peripherals; known issues are on GitHub.
@@ -32,13 +35,14 @@ The VM changes live in the Toit fork's
 | 2 | Programs installed in a flash registry and run in place (XIP); UDP over IPv6 on Thread | `spike/step2/` |
 | 3 | `net.open` provider; TCP over IPv6 on Thread | `zephyr/toit/tcp_echo.toit` |
 | 4 | Second SoC: nRF52840 dongle runs Toit from its flash registry, UDP + TCP over Thread (soak) | #6 |
+| 5 | Third SoC: RP2350B (RAM registry); STIC on all three CPUs | `spike/step4/` |
 
 Design decisions: `docs/design/zephyr-port.md`. Known issues and open work: GitHub issues.
 
 ## Build
 
 Needs the Zephyr SDK 0.17.4, the [Toit SDK v2.0.0](https://github.com/toitlang/toit/releases/tag/v2.0.0) for the
-host compiler, and an ESP32-C6 board or an nRF52840 dongle.
+host compiler, and an ESP32-C6 board, an nRF52840 dongle or an RP2350B board.
 
     west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update
     west blobs fetch hal_espressif
@@ -52,8 +56,12 @@ nRF52840 dongle: `west build -b nrf52840dongle/nrf52840 -d build-nrf ztoit/zephy
 button, then `ztoit/tools/nrf-flash.sh build-nrf` (needs `nrfutil` with `nrf5sdk-tools`). Console is USB CDC ACM;
 the app waits up to 3 s for the host to open it, then runs anyway.
 
+RP2350B (WeAct core, rete's out-of-tree board): `west build -b weact_rp2350b_core/rp2350b/m33 -d build-rp
+ztoit/zephyr -- -DBOARD_ROOT=<rete>/nodus/oevm/zephyr`, then copy `build-rp/zephyr/zephyr.uf2` to the board in
+BOOTSEL mode. Console is USB CDC ACM. The RNG is Zephyr's non-cryptographic timer generator (benchmarks only).
+
 Thread: copy `zephyr/prj_thread.local.conf.example` to `prj_thread.local.conf`, fill in your network's
-dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (either board).
+dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6 or nRF52840).
 
 ## License
 

@@ -69,3 +69,6 @@ rewrite-every-driver-in-Toit model is not followed here.
   `prj_thread.conf` on any board.
 - **USB CDC console:** `main` waits ≤3 s for DTR, then runs (a wall wart has no host). The dongle's Open
   bootloader enters DFU only from its RESET pin; GPREGRET 0xB1 did not work.
+- **Third SoC (RP2350B, 2026-11-14).** Zephyr 4.2 has no flash driver for the RP2350's QMI, so without a
+  `toit_partition` (or `CONFIG_FLASH`) the registry is a static 128 KB RAM array: programs install at boot and
+  are not XIP. No entropy driver either: the board conf uses the non-cryptographic timer RNG (benchmarks only).

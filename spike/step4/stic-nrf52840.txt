@@ -1,0 +1,21 @@
+*** Booting Zephyr OS build v4.2.0-12-gbc47c6fab9cc ***
+ztoit: program 45056 B, installed in flash in 490 ms
+Starting STIC benchmark...
+Full GC count 1
+Full GC count 2
+Full GC count 3
+STIC benchmark for Toit v2.0.0 ---------------------------
+   (smaller numbers are better)
+alloc               31.6
+array write         87.0
+dictionary write    12.9
+float math          91.9
+integer math        44.6
+collection iterate  57.7
+collection write    23.9
+string compare      6.3
+hanoi               0.0
+-------------------------------------------
+ztoit: exit reason 1 value 0
+
+elapsed 1066

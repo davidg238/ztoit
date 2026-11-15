@@ -1,0 +1,12 @@
+/* Console on the SoC's own USB (CDC ACM), as rete's usb-console.overlay. */
+/ {
+	chosen {
+		zephyr,console = &usb_console_uart;
+	};
+};
+
+&zephyr_udc0 {
+	usb_console_uart: usb_console_uart {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

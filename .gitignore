@@ -4,3 +4,4 @@ spike/baseline/base.envelope
 spike/baseline/hello.snapshot
 build-nrf/
 build-nrf-stic/
+build-rp2350-stic/
