@@ -57,7 +57,7 @@ host compiler, and an ESP32-C6 board, an nRF52840 dongle or an RP2350B board.
     # Unpack the Toit SDK to ~/.local/state/ztoit/sdk/toit, then build the fork's compiler (it knows the
     # `zephyr` primitives; needs cmake and ninja) into an SDK with the fork's lib/:
     export TOIT_HOST=$(ztoit/tools/fork-sdk.sh)
-    west build -b esp32c6_devkitc/esp32c6/hpcore -d build ztoit/zephyr -- -DPROGRAM=$PWD/ztoit/zephyr/toit/hello.toit
+    west build -b esp32c6_devkitc/esp32c6/hpcore -d build ztoit/zephyr -- -DCONTAINERS="$PWD/ztoit/zephyr/toit/hello.toit"
     west flash -d build
 
 nRF52840 dongle: `west build -b nrf52840dongle/nrf52840 -d build-nrf ztoit/zephyr`, press the dongle's RESET

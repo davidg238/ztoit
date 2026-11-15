@@ -1,7 +1,9 @@
-// ztoit: run one embedded Toit program as the boot program under Zephyr.
-// The image is installed once into the flash registry (relocated to its mapped
-// address, as toit's image writer primitives do) and runs from flash in place.
-// A later boot with the same program id reuses the installed copy.
+// ztoit: run Toit's container system under Zephyr. The registry holds the
+// fork's Zephyr system program at offset 0 and each container after it, each
+// installed once (relocated to its mapped address, as toit's image writer
+// primitives do) and run from flash in place. A boot whose registry already
+// holds exactly these images reuses them; otherwise the registry is erased and
+// all are reinstalled (a dev bootstrap until the agent owns containers).
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
@@ -19,67 +21,100 @@
 #include "third_party/dartino/object_memory.h"
 #include "thread.h"
 
-// The boot program's relocatable image, in flash (zephyr/CMakeLists.txt).
-static const unsigned char program_image[] __aligned(4) = {
-#include "program_image.inc"
+// A relocatable image in flash (zephyr/CMakeLists.txt). flags is the
+// allocation's metadata[0]: ContainerService.FLAG-RUN-BOOT for containers.
+struct Image {
+  const unsigned char* data;
+  unsigned size;
+  uint8_t flags;
 };
-static const unsigned program_image_len = sizeof(program_image);
+#include "images.inc"
+static const int IMAGE_COUNT = sizeof(images) / sizeof(images[0]);
 
 namespace toit {
 
-// The registry holds one program, at offset 0.
-static const word PROGRAM_OFFSET = 0;
+// The image is chunks of one relocation-bit word plus WORD_BIT_SIZE words.
+static const int CHUNK_WORD_SIZE = ImageOutputStream::CHUNK_SIZE;
 
-static const Program* install_program() {
-  // The image is chunks of one relocation-bit word plus WORD_BIT_SIZE words;
-  // the first chunk starts with the program header.
-  const int CHUNK_WORD_SIZE = ImageOutputStream::CHUNK_SIZE;
-  unsigned image_size = program_image_len;
-  if (image_size % (CHUNK_WORD_SIZE * WORD_SIZE) != 0) FATAL("bad image size %u", image_size);
-  word relocated_size = (image_size / CHUNK_WORD_SIZE) * WORD_BIT_SIZE;
-  word allocation_size = Utils::round_up(relocated_size, FLASH_PAGE_SIZE);
+static word relocated_size(const Image& image) {
+  if (image.size % (CHUNK_WORD_SIZE * WORD_SIZE) != 0) FATAL("bad image size %u", image.size);
+  return (image.size / CHUNK_WORD_SIZE) * WORD_BIT_SIZE;
+}
 
-  FlashAllocation::Header image_header(*reinterpret_cast<const FlashAllocation::Header*>(&program_image[WORD_SIZE]));
-  const FlashAllocation* installed = FlashRegistry::allocation(PROGRAM_OFFSET);
-  if (installed != null && installed->is_program() &&
-      memcmp(installed->id(), image_header.id(), FlashAllocation::Header::ID_SIZE) == 0) {
-    printf("ztoit: program %d B, already in the registry\n", static_cast<int>(installed->size()));
-    return static_cast<const Program*>(installed);
-  }
+static word allocation_size(const Image& image) {
+  return Utils::round_up(relocated_size(image), FLASH_PAGE_SIZE);
+}
 
-  if (allocation_size > FlashRegistry::allocations_size()) FATAL("program %d B > registry", static_cast<int>(allocation_size));
+// The first chunk starts with the program header.
+static FlashAllocation::Header image_header(const Image& image) {
+  return *reinterpret_cast<const FlashAllocation::Header*>(&image.data[WORD_SIZE]);
+}
+
+static bool installed_at(const Image& image, word offset) {
+  const FlashAllocation* installed = FlashRegistry::allocation(offset);
+  return installed != null && installed->is_program() &&
+         memcmp(installed->id(), image_header(image).id(), FlashAllocation::Header::ID_SIZE) == 0;
+}
+
+static const Program* install_image(const unsigned char* data, unsigned size, word offset, uint8 flags) {
+  Image source = { data, size, flags };
+  word relocated = relocated_size(source);
+  word allocation = allocation_size(source);
   int64 start = k_uptime_get();
-  if (FlashRegistry::erase_chunk(PROGRAM_OFFSET, allocation_size) == 0) FATAL("erase failed");
-  ProgramImage image(FlashRegistry::region(PROGRAM_OFFSET, allocation_size), allocation_size);
+  ProgramImage image(FlashRegistry::region(offset, allocation), allocation);
   ImageOutputStream output(image);
   word buffer[WORD_BIT_SIZE];
-  int image_word_size = image_size / WORD_SIZE;
+  int image_word_size = size / WORD_SIZE;
   for (int i = 0; i < image_word_size; i += CHUNK_WORD_SIZE) {
     bool first = output.empty();
-    word offset = FlashRegistry::offset(output.cursor());
-    output.write(reinterpret_cast<word*>(const_cast<unsigned char*>(&program_image[i * WORD_SIZE])), CHUNK_WORD_SIZE, buffer);
+    word chunk_offset = FlashRegistry::offset(output.cursor());
+    output.write(reinterpret_cast<word*>(const_cast<unsigned char*>(&data[i * WORD_SIZE])), CHUNK_WORD_SIZE, buffer);
     // The header goes last (commit below): only a complete write is valid.
     word skip = first ? sizeof(FlashAllocation::Header) : 0;
-    if (!FlashRegistry::write_chunk(reinterpret_cast<uint8*>(buffer) + skip, offset + skip,
+    if (!FlashRegistry::write_chunk(reinterpret_cast<uint8*>(buffer) + skip, chunk_offset + skip,
                                     WORD_BIT_SIZE * WORD_SIZE - skip)) {
-      FATAL("flash write failed at %d", static_cast<int>(offset));
+      FATAL("flash write failed at %d", static_cast<int>(chunk_offset));
     }
   }
   uint8 metadata[FlashAllocation::Header::METADATA_SIZE] = { 0 };
-  word program_size = image_header.size();
+  metadata[0] = flags;
+  FlashAllocation::Header source_header = image_header(source);
   const FlashAllocation::Header header(image.begin(), FLASH_ALLOCATION_TYPE_PROGRAM,
-                                       image_header.id(), program_size, metadata);
-  if (!FlashAllocation::commit(image.begin(), program_size, &header)) FATAL("commit failed");
-  printf("ztoit: program %d B, installed in the registry in %d ms\n",
-         static_cast<int>(relocated_size), static_cast<int>(k_uptime_get() - start));
-  return static_cast<const Program*>(FlashRegistry::allocation(PROGRAM_OFFSET));
+                                       source_header.id(), source_header.size(), metadata);
+  if (!FlashAllocation::commit(image.begin(), source_header.size(), &header)) FATAL("commit failed");
+  printf("ztoit: program %d B at %d, installed in the registry in %d ms\n",
+         static_cast<int>(relocated), static_cast<int>(offset), static_cast<int>(k_uptime_get() - start));
+  return static_cast<const Program*>(FlashRegistry::allocation(offset));
+}
+
+// Installs images[] back to back from offset 0, unless the registry holds
+// exactly them already. Returns the system program, image 0.
+static const Program* install_images() {
+  word total = 0;
+  for (int i = 0; i < IMAGE_COUNT; i++) total += allocation_size(images[i]);
+  if (total > FlashRegistry::allocations_size()) {
+    FATAL("images %d B > registry %d B", static_cast<int>(total), static_cast<int>(FlashRegistry::allocations_size()));
+  }
+  bool current = total == FlashRegistry::allocations_size() || FlashRegistry::allocation(total) == null;
+  for (word i = 0, offset = 0; current && i < IMAGE_COUNT; offset += allocation_size(images[i]), i++) {
+    current = installed_at(images[i], offset);
+  }
+  if (current) {
+    printf("ztoit: %d images, already in the registry\n", IMAGE_COUNT);
+  } else {
+    if (FlashRegistry::erase_chunk(0, FlashRegistry::allocations_size()) == 0) FATAL("erase failed");
+    for (word i = 0, offset = 0; i < IMAGE_COUNT; offset += allocation_size(images[i]), i++) {
+      install_image(images[i].data, images[i].size, offset, images[i].flags);
+    }
+  }
+  return static_cast<const Program*>(FlashRegistry::allocation(0));
 }
 
 static int run() {
   FlashRegistry::set_up();
   OS::set_up();
   ObjectMemory::set_up();
-  Program* program = const_cast<Program*>(install_program());
+  Program* program = const_cast<Program*>(install_images());
   Scheduler::ExitState exit;
   {
     VM vm;
