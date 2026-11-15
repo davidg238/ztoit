@@ -69,7 +69,9 @@ ztoit/zephyr -- -DBOARD_ROOT=<rete>/nodus/oevm/zephyr`, then copy `build-rp/zeph
 BOOTSEL mode. Console is USB CDC ACM. The RNG is Zephyr's non-cryptographic timer generator (benchmarks only).
 
 Thread: copy `zephyr/prj_thread.local.conf.example` to `prj_thread.local.conf`, fill in your network's
-dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6 or nRF52840).
+dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6 or nRF52840). The node joins on
+the first `net.open`, and after the last close stays attached as a sleepy end device
+(`-DCONFIG_TOIT_THREAD_DOWN_DETACH=y`: disables Thread instead).
 
 ## License
 

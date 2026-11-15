@@ -19,7 +19,6 @@
 #include "snapshot.h"
 #include "vm.h"
 #include "third_party/dartino/object_memory.h"
-#include "thread.h"
 
 // A relocatable image in flash (zephyr/CMakeLists.txt). flags is the
 // allocation's metadata[0]: ContainerService.FLAG-RUN-BOOT for containers.
@@ -143,8 +142,5 @@ static void wait_for_console() {
 
 int main() {
   wait_for_console();
-#ifdef CONFIG_NET_L2_OPENTHREAD
-  ztoit_thread_up();
-#endif
   return toit::run();
 }

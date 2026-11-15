@@ -8,3 +8,10 @@ config TOIT_HEAP_SIZE
 	int "Bytes in the static arena Toit heap pages come from"
 	default 163840
 	depends on TOIT
+
+config TOIT_THREAD_DOWN_DETACH
+	bool "Thread down = disabled"
+	depends on NET_L2_OPENTHREAD
+	help
+	  Down = Thread disabled (each net.open rejoins); default: stay attached
+	  as a sleepy end device (ztoit design §7).
