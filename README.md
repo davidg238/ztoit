@@ -17,9 +17,12 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 - **At least as fast as stock Toit** on a simple benchmark ([STIC](https://github.com/davidg238/performance_stic), same ESP32-C6, v2.0.0 both sides):
   interpreter-bound rows match, allocation-heavy rows are 1.2–2.2× faster (cause not yet measured, #2).
   STIC on all three CPUs: `spike/step4/`.
-- **Peripherals will come from Zephyr's drivers** (devicetree, sensor and input APIs), not Toit rewrites (#7).
+- **Peripherals come from Zephyr's drivers**, named by devicetree label, not Toit rewrites: `import zephyr`
+  (`Sensor`, `Led`, `LedStrip`, `Key`), one primitive module generic over Zephyr's device classes (#7). On the
+  C6: a BMP180 over I2C, the BOOT button (debounced input events), an output pin and the on-board RGB LED;
+  BOOT and the RGB LED need no wiring.
 
-Not yet: DNS, Toit's full `system/` containers, peripherals; known issues are on GitHub.
+Not yet: DNS, Toit's full `system/` containers, raw `gpio`/`i2c`/`spi`; known issues are on GitHub.
 
 The VM changes live in the Toit fork's
 [`zephyr-port`](https://github.com/davidg238/toit/tree/zephyr-port) branch; this repo holds the Zephyr module
@@ -36,6 +39,9 @@ The VM changes live in the Toit fork's
 | 3 | `net.open` provider; TCP over IPv6 on Thread | `zephyr/toit/tcp_echo.toit` |
 | 4 | Second SoC: nRF52840 dongle runs Toit from its flash registry, UDP + TCP over Thread (soak) | #6 |
 | 5 | Third SoC: RP2350B (RAM registry); STIC on all three CPUs | `spike/step4/` |
+| 6 | Zephyr devices from Toit: BMP180, BOOT key, output pin, RGB LED on the C6 | `zephyr/toit/io.toit`, #7 |
+
+![ESP32-C6 running io.toit: BMP180, LED on GPIO3, on-board RGB LED](docs/img/c6-io.jpg)
 
 Design decisions: `docs/design/zephyr-port.md`. Known issues and open work: GitHub issues.
 
@@ -47,7 +53,8 @@ host compiler, and an ESP32-C6 board, an nRF52840 dongle or an RP2350B board.
     west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update
     west blobs fetch hal_espressif
     export ZEPHYR_BASE=$PWD/zephyr TOIT_SRC=$PWD/toit
-    # Unpack the Toit SDK to ~/.local/state/ztoit/sdk/toit, then build the host compiler with the fork's lib/:
+    # Unpack the Toit SDK to ~/.local/state/ztoit/sdk/toit, then build the fork's compiler (it knows the
+    # `zephyr` primitives; needs cmake and ninja) into an SDK with the fork's lib/:
     export TOIT_HOST=$(ztoit/tools/fork-sdk.sh)
     west build -b esp32c6_devkitc/esp32c6/hpcore -d build ztoit/zephyr -- -DPROGRAM=$PWD/ztoit/zephyr/toit/hello.toit
     west flash -d build
