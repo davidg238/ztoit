@@ -1,15 +1,14 @@
 # Focus
 
-- **Next session starts with:** branch `main`, focus #7 (switch + BMP180 on the C6 via Zephyr gpio-keys and sensor
-  APIs). First action: ask David which C6 GPIOs the switch and BMP180 SDA/SCL are wired to, then write the overlay.
-- **Soak (#4):** nRF52840 dongle on a wall wart since 2026-11-14 16:56, no console. Read it from the gateway:
-  `ssh gw85224-01 journalctl -u udp-echo6 --since -10min | grep -c a6b3:ece2:10ef:10d3` (expect 12/min).
-- **Boards:** the C6 still runs `soak.toit` (…40db) until flashed for #7; opening its port resets it. Dongle
-  reflash: back on msi USB, RESET press, `tools/nrf-flash.sh`. gw85224-01 runs `tcp-echo6` + rete's `udp-echo6`.
-  `rete-custos` stays disabled for the loan (`CLAUDE.md`). Thread build: `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"`.
-- **On msi USB:** WeAct RP2350B (ztoit STIC, flash by UF2 in BOOTSEL) and a second nRF52840 dongle (was rete's,
-  now ztoit STIC; rebuild rete's image to give it back). STIC on three CPUs: `spike/step4/`.
+- **Deadline (David, 2026-11-14):** 4 h total for #7 I/O + soak review (#8), then David announces on the Toit forum.
+- **Next session starts with:** branch `main`. First: soak review — #8 (wall-wart dongle stalled at ~55 min).
+  `grep -a "soak: round\|FAILED\|Booting" ~/.local/state/ztoit/soak-nrf2-20261114.log | tail` (USB dongle …2dbf,
+  logger PID 242163), and for …a6b3/…40db: `ssh gw85224-01 journalctl -u udp-echo6 --since -1h | grep -c <addr>`
+  (12/min each). Post on #8/#4. Then #7: ask David for the C6 pins (switch, BMP180 SDA/SCL), write the overlay.
+- **Boards:** C6 (…40db) runs `soak.toit`; flashing it for #7 ends that. WeAct RP2350B on msi USB (STIC; UF2 in
+  BOOTSEL). Dongle reflash: msi USB, RESET, `tools/nrf-flash.sh`. gw85224-01: `tcp-echo6` + rete's `udp-echo6`.
+  `rete-custos` stays disabled for the loan (`CLAUDE.md`). The second dongle was rete's: rebuild rete's image to return it.
 - **Awaiting David:** C6 pin wiring for #7.
-- **Decided:** ztoit public, Apache-2.0 (`README.md`); peripherals from Zephyr drivers, two SoCs
-  (`docs/design/zephyr-port.md` addenda). Test programs use ≤8 tasks, not 100 (#3).
-- **Found:** #2, #3, #5: P3. DNS skipped for now.
+- **Decided:** ztoit public, Apache-2.0; peripherals from Zephyr drivers; three SoCs (C6, nRF52840, RP2350B
+  RAM registry) — `docs/design/zephyr-port.md` addenda. Test programs ≤8 tasks (#3). DNS skipped for now.
+- **Found:** #2, #3, #5: P3. #8: P2.
