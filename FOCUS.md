@@ -1,17 +1,14 @@
 # Focus
 
-- **Next session starts with:** branch `main`. Execute nodus-toit **Plan 1**
-  (`docs/superpowers/plans/2026-11-15-nodus-toit-plan1-containers.md`, approved, run natively, refs #10). First:
-  Task 1, the fork's `system/extensions/zephyr/boot.toit`. Reflashes (C6, dongles) each need David's go.
-- **Boards:** C6 (…40db) runs `io.toit` on `/dev/ttyUSB0`. Dongle 2dbf (instrumented soak, s37 build) is
-  **silent since 11:51 on 11-15** (#12, P2), left as is. a6b3 runs the old soak (`soak-nrf-a6b3-usb-20261115.log`).
-  Loggers: PIDs 632378 (2dbf), 632379 (a6b3). `rete-custos` stays disabled for the loan (`CLAUDE.md`).
-- **Awaiting David:** XIAO nRF54L15 Sense (shipping from CA, due week of 11-16).
-- **Decided:** `zephyr` primitive module + fork compiler (`docs/design/zephyr-port.md`). Containers stay stock
-  Toit; jag/Artemis wire compatibility is not a goal. nodus-toit design `docs/design/2026-11-15-nodus-toit-design.md`:
-  C agent + Toit supervisor, CoAP to porta (rete#505), dev tool **faber**, flash console, power
-  `on`/`sleep`/`deep-sleep` separate from the radio, sleepy-end-device default. Roadmap #11 revised: step 2 =
-  nodus-toit; raw gpio/i2c/spi only as needed. Florian: no rebase (#11). zpen (private) later.
-- **#9:** the 5-min summary (`process-stats --gc`) loses the next UDP echo (proved with a 37-round summary);
-  next test: summary without `--gc`.
-- **Found:** #2, #3, #5, #10, #13: P3. #8, #12: P2.
+- **Next session starts with:** branch `main`. Plan 1 (containers) is done (#10). Write the plan for design §11
+  step 2, the network provider up/down (`docs/design/2026-11-15-nodus-toit-design.md`), with superpowers:writing-plans.
+- **Boards:** C6 (`/dev/ttyUSB0`) runs hello+crash+io as containers. Dongle 2dbf (BLE EC:34:E5:7C:A8:E1) runs
+  the soak as a container, logger PID 688963 → `soak-nrf-2dbf-container-20261115.log`. a6b3 silent since 12:54
+  (#12, second occurrence), logger 632379 still attached. Reflashes need David's go. `rete-custos` stays disabled.
+- **Awaiting David:** XIAO nRF54L15 Sense (due week of 11-16).
+- **Decided:** containers stay stock Toit; the fork's `system/extensions/zephyr/boot.toit` is the system program.
+  Boot rule: the registry is erased unless it holds exactly the built images (image ids are deterministic, #10);
+  install (§11 step 4) must replace it. `-DCONTAINERS=a.toit;b.toit` replaces `-DPROGRAM`.
+- **#9:** next test (summary without `--gc`) needs a free dongle. **#12:** dongles go silent after network
+  degradation; P2.
+- **Found:** #2, #3, #5, #13, #14–#17: P3. #8, #12: P2.

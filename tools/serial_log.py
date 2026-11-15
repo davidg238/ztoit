@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Log the C6's console with host timestamps, forever (soaks). Opening the port
-# resets the board (DTR/RTS on this USB-UART), so a log starts at a fresh boot.
+# does not reliably reset the board (2026-11-15: a log opened mid-run): to see a
+# boot, start the logger, then press RESET, or flash and log in one command.
 #   tools/serial_log.py <logfile> [port]
 import serial, sys, time
 path = sys.argv[1]
