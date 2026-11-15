@@ -7,6 +7,8 @@
 - **Boards:** the C6 still runs `soak.toit` (…40db) until flashed for #7; opening its port resets it. Dongle
   reflash: back on msi USB, RESET press, `tools/nrf-flash.sh`. gw85224-01 runs `tcp-echo6` + rete's `udp-echo6`.
   `rete-custos` stays disabled for the loan (`CLAUDE.md`). Thread build: `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"`.
+- **On msi USB:** WeAct RP2350B (ztoit STIC, flash by UF2 in BOOTSEL) and a second nRF52840 dongle (was rete's,
+  now ztoit STIC; rebuild rete's image to give it back). STIC on three CPUs: `spike/step4/`.
 - **Awaiting David:** C6 pin wiring for #7.
 - **Decided:** ztoit public, Apache-2.0 (`README.md`); peripherals from Zephyr drivers, two SoCs
   (`docs/design/zephyr-port.md` addenda). Test programs use ≤8 tasks, not 100 (#3).
