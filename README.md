@@ -1,7 +1,21 @@
 # ztoit — the Toit VM on Zephyr
 
-A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as a Zephyr application,
-first on the ESP32-C6. The VM changes live in the Toit fork's
+A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as a Zephyr application.
+
+**What the spike shows:**
+
+- **The Toit interpreter runs on Zephyr**, on two SoCs: ESP32-C6 (RISC-V) and nRF52840 (Arm Cortex-M4).
+  Stock Toit has no nRF52840 port; here it needed one VM change, in the flash registry.
+- **Programs run from flash in place (XIP)**, installed in a flash registry, on both chips.
+- **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on both chips; the nRF52840 dongle runs
+  a UDP + TCP echo soak on a wall wart.
+- **At least as fast as stock Toit** on a simple benchmark (STIC, same ESP32-C6, v2.0.0 both sides):
+  interpreter-bound rows match, allocation-heavy rows are 1.2–2.2× faster (cause not yet measured, #2).
+- **Peripherals will come from Zephyr's drivers** (devicetree, sensor and input APIs), not Toit rewrites (#7).
+
+Not yet: DNS, Toit's full `system/` containers, peripherals; known issues are on GitHub.
+
+The VM changes live in the Toit fork's
 [`zephyr-port`](https://github.com/davidg238/toit/tree/zephyr-port) branch; this repo holds the Zephyr module
 (`modules/toit/`), the application (`zephyr/`), and the measurements (`spike/`). The backend seams come from
 [rete](https://github.com/davidg238/rete).
