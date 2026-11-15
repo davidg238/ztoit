@@ -176,6 +176,10 @@ at the next report. Offline is k × `reportS`.
   - ring size per board.
 - **The safe-mode threshold N** and where the boot counter lives.
 - **How the stock `system/` is trimmed** to fit the nRF52840 (measure first).
+  - Measured 2026-11-15 (Plan 1, untrimmed stock system program + `soak.toit` as its one container): FLASH
+    464,608 B of 636 KB (71%), RAM 186,896 B of 256 KB (71%). Registry images: system 49,152 B, soak 57,344 B,
+    in a 240 KB registry. It fits untrimmed, and the soak's first 37 rounds pass (`udp ok=37`, `tcp ok=37`). No
+    trimming needed yet.
 - **Deep sleep on each SoC**: wake sources and what persists across it.
 - **Order of work.** One sensible order:
   1. stock container system boots on ztoit;
