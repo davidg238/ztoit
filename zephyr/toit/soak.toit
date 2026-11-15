@@ -12,7 +12,7 @@ GATEWAY ::= "fdc5:9109:9afe:97ea:9541:d963:f8d9:8567"  // Mesh-local EID.
 PORT ::= 7777
 ROUND-MS ::= 5_000
 TIMEOUT-MS ::= 3_000
-SUMMARY-ROUNDS ::= 60  // Five minutes.
+SUMMARY-ROUNDS ::= 37  // ztoit#9: off the 300 s period, to separate the summary from 300 s timers.
 UDP-SIZE ::= 64
 TCP-SIZE ::= 256
 
@@ -66,6 +66,8 @@ main:
   tcp-stats := Stats "tcp"
   tcp-connects := 0
   round := 0
+  lost/ByteArray? := null  // ztoit#9: the last unanswered UDP message, to report a late echo.
+  lost-us := 0
   while true:
     round++
     round-start := Time.monotonic-us
@@ -79,10 +81,15 @@ main:
         while true:
           datagram := udp-socket.receive
           if datagram.data == message: break
+          if lost and datagram.data == lost:
+            print "soak: late udp echo $((Time.monotonic-us - lost-us) / 1000) ms after send"
+            lost = null
       udp-stats.record (Time.monotonic-us - start) / 1000
     if error:
       udp-stats.failed++
-      print "soak: round $round udp FAILED: $error"
+      lost = message
+      lost-us = start
+      print "soak: round $round udp FAILED at uptime $(start / 1000) ms: $error"
 
     // TCP: one message on the persistent connection, re-opened after a failure.
     start = Time.monotonic-us
