@@ -56,3 +56,16 @@ rewrite-every-driver-in-Toit model is not followed here.
 - **Raw `gpio`/`i2c`/`spi`** primitives are thin shims over Zephyr's APIs: an escape hatch, and existing Toit
   driver packages can run on them. No ESP-IDF resource code, no Toit driver for a part Zephyr already supports.
 - **Cost:** a part Zephyr lacks (e.g. VL6180) needs a Zephyr driver (upstreamable) or the raw-bus escape hatch.
+
+## Addendum 2026-11-14 — second SoC (nRF52840 dongle)
+
+- **Registry on memory-mapped flash.** Supersedes "mmap is Espressif-specific": `spi_flash_mmap` only under
+  `CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`; elsewhere the partition is read at the flash node's address + offset.
+- **Dongle layout** (`zephyr/boards/nrf52840dongle_nrf52840.overlay`): app 0x1000–0xa0000 (`FLASH_LOAD_SIZE` makes
+  overflow a link error), `toit_partition` 0xa0000–0xdc000, storage (OpenThread settings), nRF5 bootloader.
+- **The program image is const, in flash** (`generate_inc_file_for_target`): it is read once, to install. As
+  RAM `.data` it cost 67 KB and starved the libc heap (thread stacks), stalling the dongle after Thread attach.
+- **Radio enable lives in the board overlay**; driver Kconfig follows the devicetree, so a Thread build is
+  `prj_thread.conf` on any board.
+- **USB CDC console:** `main` waits ≤3 s for DTR, then runs (a wall wart has no host). The dongle's Open
+  bootloader enters DFU only from its RESET pin; GPREGRET 0xB1 did not work.
