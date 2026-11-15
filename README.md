@@ -34,13 +34,13 @@ The VM changes live in the Toit fork's
 
 | Step | Result | Record |
 |---|---|---|
-| 0 | Stock Toit v2.0.0 baseline on the same board | `spike/baseline/` |
-| 1 | VM core boots under Zephyr; STIC benchmark at least as fast as stock on every row | `spike/step1/` |
-| 2 | Programs installed in a flash registry and run in place (XIP); UDP over IPv6 on Thread | `spike/step2/` |
-| 3 | `net.open` provider; TCP over IPv6 on Thread | `zephyr/toit/tcp_echo.toit` |
-| 4 | Second SoC: nRF52840 dongle runs Toit from its flash registry, UDP + TCP over Thread (soak) | #6 |
-| 5 | Third SoC: RP2350B (RAM registry); STIC on all three CPUs | `spike/step4/` |
-| 6 | Zephyr devices from Toit: BMP180, BOOT key, output pin, RGB LED on the C6 | `zephyr/toit/io.toit`, #7 |
+| 0 | Stock Toit v2.0.0 baseline on the same board | [`spike/baseline/`](spike/baseline/) |
+| 1 | VM core boots under Zephyr; STIC benchmark at least as fast as stock on every row | [`spike/step1/`](spike/step1/) |
+| 2 | Programs installed in a flash registry and run in place (XIP); UDP over IPv6 on Thread | [`spike/step2/`](spike/step2/) |
+| 3 | `net.open` provider; TCP over IPv6 on Thread | [`zephyr/toit/tcp_echo.toit`](zephyr/toit/tcp_echo.toit) |
+| 4 | Second SoC: nRF52840 dongle runs Toit from its flash registry, UDP + TCP over Thread (soak) | [#6](https://github.com/davidg238/ztoit/issues/6) |
+| 5 | Third SoC: RP2350B (RAM registry); STIC on all three CPUs | [`spike/step4/`](spike/step4/) |
+| 6 | Zephyr devices from Toit: BMP180, BOOT key, output pin, RGB LED on the C6 | [`zephyr/toit/io.toit`](zephyr/toit/io.toit), [#7](https://github.com/davidg238/ztoit/issues/7) |
 
 ![ESP32-C6 running io.toit: BMP180, LED on GPIO3, on-board RGB LED](docs/img/c6-io.jpg)
 
