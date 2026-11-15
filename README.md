@@ -9,7 +9,8 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
   - nRF52840 (Arm Cortex-M4)
   - RP2350B (Arm Cortex-M33)
 
-  Stock Toit needed one VM change, in the flash registry.
+  Stock Toit needed one VM change, in the flash registry; the rest is new Zephyr platform code, plus the
+  `zephyr` primitive module (appended after the stock modules, so a forked compiler is needed for now).
 - **Programs run from flash in place (XIP)**, installed in a flash registry, on the C6 and the nRF52840
   (the RP2350B installs into RAM: Zephyr has no flash driver for its QSPI controller yet).
 - **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on the C6 and the nRF52840; the nRF52840
