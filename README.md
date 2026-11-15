@@ -9,7 +9,7 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 - **Programs run from flash in place (XIP)**, installed in a flash registry, on both chips.
 - **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on both chips; the nRF52840 dongle runs
   a UDP + TCP echo soak on a wall wart.
-- **At least as fast as stock Toit** on a simple benchmark (STIC, same ESP32-C6, v2.0.0 both sides):
+- **At least as fast as stock Toit** on a simple benchmark ([STIC](https://github.com/davidg238/performance_stic), same ESP32-C6, v2.0.0 both sides):
   interpreter-bound rows match, allocation-heavy rows are 1.2–2.2× faster (cause not yet measured, #2).
 - **Peripherals will come from Zephyr's drivers** (devicetree, sensor and input APIs), not Toit rewrites (#7).
 
