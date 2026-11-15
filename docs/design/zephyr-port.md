@@ -72,3 +72,23 @@ rewrite-every-driver-in-Toit model is not followed here.
 - **Third SoC (RP2350B, 2026-11-14).** Zephyr 4.2 has no flash driver for the RP2350's QMI, so without a
   `toit_partition` (or `CONFIG_FLASH`) the registry is a static 128 KB RAM array: programs install at boot and
   are not XIP. No entropy driver either: the board conf uses the non-cryptographic timer RNG (benchmarks only).
+
+## Addendum 2026-11-14 — the `zephyr` primitive module and the fork compiler (#7)
+
+Implements "peripherals come from Zephyr" above.
+
+- **Own module, appended last.** `M(zephyr, MODULE_ZEPHYR)` is the final entry in `MODULES` (`src/primitive.h`),
+  so every stock module keeps its number. Implemented in `src/resources/zephyr.cc`; other platforms get the
+  weak null entry. API: `lib/zephyr.toit` (`Sensor`, `LedStrip`, `Led`, `Key`).
+- **Fork compiler.** The compiler maps `#primitive.m.p` to (module, index) at compile time, so a stock
+  compiler rejects a new module. `tools/fork-sdk.sh` builds the fork's `toit.compile` (≈30 s) into the SDK;
+  the rest of the SDK stays stock.
+- **Per device class, not per driver.** Ten primitives cover sensor, LED, LED strip and input; a new driver in
+  those classes is devicetree only. Devices by node label (`CONFIG_DEVICE_DT_METADATA`); `gpio-leds`/`gpio-keys`
+  children, which are not devices, from tables built from the devicetree.
+- **Keys:** `INPUT_CALLBACK_DEFINE` runs on Zephyr's input thread, which is not a Toit thread and must not take
+  Toit locks (it aborted with "thread must be present"). The callback marks the key pending and gives a
+  semaphore; `ZephyrKeyEventSource`'s own thread dispatches. Only built with `CONFIG_INPUT`.
+- **Bare-board test.** The C6's BOOT button and on-board WS2812 (`ws2812-i2s`, data line only) need no wiring.
+  `spi2` is disabled: the board dts puts it on GPIO6/7, `i2c0`'s pins.
+- **Driver quirk:** Zephyr's `bosch,bmp180` reports temperature on `DIE_TEMP`, not `AMBIENT_TEMP`.

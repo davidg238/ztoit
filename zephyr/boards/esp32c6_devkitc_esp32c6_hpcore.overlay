@@ -14,3 +14,67 @@
 &ieee802154 {
 	status = "okay";
 };
+
+/* #7 I/O, wired 2026-11-14: the DI is the board's BOOT button (GPIO9,
+ * `user_button1` in the board dts; a strapping pin, so held at reset it enters
+ * download mode). An output on GPIO3, and an Adafruit BMP180 breakout on the
+ * board's i2c0 (SDA GPIO6, SCL GPIO7; breakout pull-ups, VIN from 3V3). Toit
+ * names these by devicetree label.
+ * The on-board RGB LED (WS2812 on GPIO8, the upstream led_strip sample's
+ * ws2812-i2s) needs no wiring either, so BOOT + RGB test ztoit on a bare board.
+ * Only the data line is routed: the WS2812 needs no I2S clock pins. */
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		do0: do_0 {
+			label = "DO";
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&i2c0 {
+	bmp180: bmp180@77 {
+		compatible = "bosch,bmp180";
+		reg = <0x77>;
+		osr-press = <1>;
+	};
+};
+
+/* The board dts enables spi2 with SCLK on GPIO6 and MOSI on GPIO7, i2c0's pins.
+ * ztoit uses no SPI; off so it cannot take the BMP180's bus. */
+&spi2 {
+	status = "disabled";
+};
+
+&pinctrl {
+	i2s_led_default: i2s_led_default {
+		group1 {
+			pinmux = <I2S_O_SD_GPIO8>;
+		};
+	};
+};
+
+&i2s {
+	status = "okay";
+	pinctrl-0 = <&i2s_led_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 3>;
+	dma-names = "tx";
+
+	rgb_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-i2s";
+		reg = <0>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		reset-delay = <500>;
+	};
+};
+
+&dma {
+	status = "okay";
+};
