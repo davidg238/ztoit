@@ -10,5 +10,5 @@
 - **Decided:** `zephyr` primitive module, appended last, + fork compiler (`docs/design/zephyr-port.md` addendum).
   Roadmap order #11 (David 2026-11-15). Upstream Zephyr port (toitlang/toit #3322–#3333) is slow; Florian: no
   rebase, his agents would redo it — ztoit stays independent, the design doc is the handoff (#11 comment).
-  OTA #10: CoAP block-wise fetched in C, replacing TFTP; nodus keeper model for sleepy nodes. zpen (private) later.
+  OTA #10: ztoit node = porta client; CoAP block-wise fetched in C (not TFTP); nodus keeper model. zpen later.
 - **Found:** #2, #3, #5, #9, #10: P3. #8: P2.
