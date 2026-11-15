@@ -14,19 +14,26 @@ set(CONTAINERS ${CMAKE_CURRENT_SOURCE_DIR}/toit/hello.toit CACHE STRING "Toit co
 set(GEN ${CMAKE_CURRENT_BINARY_DIR}/toit)
 file(MAKE_DIRECTORY ${GEN})
 
+# The compiler's dependency file makes an edit to any imported file rebuild the image.
 function(toit_image stem source)
   add_custom_command(
+    OUTPUT ${GEN}/${stem}.snapshot
+    COMMAND $ENV{TOIT_HOST} compile --snapshot -O2 -o ${GEN}/${stem}.snapshot
+            --dependency-file ${GEN}/${stem}.d --dependency-format ninja ${source}
+    DEPENDS ${source}
+    DEPFILE ${GEN}/${stem}.d
+    VERBATIM)
+  add_custom_command(
     OUTPUT ${GEN}/${stem}.image
-    COMMAND $ENV{TOIT_HOST} compile --snapshot -O2 -o ${GEN}/${stem}.snapshot ${source}
     COMMAND $ENV{TOIT_HOST} tool snapshot-to-image --format=binary -m32
             -o ${GEN}/${stem}.image ${GEN}/${stem}.snapshot
-    DEPENDS ${source} ${ARGN}
+    DEPENDS ${GEN}/${stem}.snapshot
     VERBATIM)
   generate_inc_file_for_target(app ${GEN}/${stem}.image ${GEN}/${stem}_image.inc)
 endfunction()
 
 set(SYSTEM_DIR $ENV{TOIT_SRC}/system/extensions/zephyr)
-toit_image(system ${SYSTEM_DIR}/boot.toit ${SYSTEM_DIR}/network.toit)
+toit_image(system ${SYSTEM_DIR}/boot.toit)
 set(arrays "static const unsigned char image_system[] __aligned(4) = {\n#include \"system_image.inc\"\n};\n")
 set(entries "  { image_system, sizeof(image_system), 0 },\n")
 set(stems system)
