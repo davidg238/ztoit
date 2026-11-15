@@ -17,7 +17,8 @@ Toit has no debugger or profiler, so a **remote console** on deployed code is a 
 
 - **Goals.** Install, start, stop, uninstall Toit containers over the air. Remote console and crash reports,
   surviving reboots. Nodes that are `on`, `sleep` or `deep-sleep`, reporting on their own schedule. Thread now,
-  WiFi later. A proven crash-recovery path (§9).
+  WiFi later. A proven crash-recovery path (§9). Stock Toit container compatibility (images,
+  `system.containers`); jag/Artemis *wire* compatibility is not a goal (David 2026-11-15).
 - **Non-goals.** Firmware OTA (the Zephyr image, the VM, the system program): deferred, as in rete's custos D4.
   App telemetry: apps that want it use their own CoAP client against porta's general CoAP facility; we are not
   responsible for it. Jaguar/Artemis protocol compatibility.
