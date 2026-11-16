@@ -1,7 +1,8 @@
 # A first Thread attach fails once the Toit VM is up (C6), 2026-11-15
 
 Issue #19, found during #10 (Plan 2, `docs/superpowers/plans/2026-11-15-nodus-toit-plan2-network.md`), while fixing the final
-review's I1/I2. Cause **unknown**. This file is the record for the next session; logs are in
+review's I1/I2. **Resolved 2026-11-15: the mbedTLS heap was too small — see "Resolution" at the end; the best
+guess and two dead ends below were wrong.** Logs are in
 `~/.local/state/ztoit/net-c6-*-20261115.log` (read with `grep -a`).
 
 ## The failure
@@ -78,3 +79,35 @@ David's proposal (2026-11-15): attach in `main()` before the VM, capped as Plan 
 up/down as Plan 2 built it. Measured cost: ~0.45 s per boot with a stored child, 1.1–2.6 s from scratch. Its risk:
 a node that must find a new parent while the VM runs (parent lost) may hit this failure; the detached-mode
 re-attach working with the VM up is partial evidence it will not.
+
+## Resolution (2026-11-15, runs 11–13)
+
+**Cause:** OpenThread shares Zephyr's mbedTLS heap (`CONFIG_MBEDTLS_HEAP_SIZE`, default 512 B) with the VM. Setting
+the network key (`openthread_run` → `otThreadSetNetworkKey` → `KeyManager::UpdateKeyMaterial`) starts an HMAC, whose
+`mbedtls_md_setup` allocates from that heap. With the VM up the allocation fails; OpenThread reports it only through
+`SuccessOrAssert`, which is a no-op without `CONFIG_ASSERT`, so the keys are derived from garbage and the gateway
+drops every MLE message. A stored dataset hid it because its keys are derived at boot, before the VM.
+
+**Fix:** `CONFIG_MBEDTLS_HEAP_SIZE` in `zephyr/prj_thread.conf` (the value is a guess; its peak is not measured, #20).
+
+| # | What ran (zephyr-port `bb866c16`, `thread_up` from the VM) | Result |
+|---|---|---|
+| 11 | + `CONFIG_ASSERT=y`, OT log INFO. Settings not erased first (no child stored since run 10) | `OpenThread ASSERT @ crypto/hmac_sha256.cpp:47` on the Toit thread at 1.04 s, in `UpdateKeyMaterial` |
+| 12 | Run 11 + the heap line, settings erased | ✓ role 2 in 927 ms, echo OK; then the #5 spinlock assert at 3.56 s (`CONFIG_ASSERT` only) |
+| 13 | Normal build + the heap line, settings erased | ✓ role 2 in 1519 ms, echo OK, `down sed`; next cycle up in 7 ms, echo OK |
+
+Logs: `net-c6-otlog-`, `net-c6-heap2048-`, `net-c6-heapfix-20261115.log`.
+
+**What the record above got wrong:**
+
+- *Best guess (the VM stops the C6 receiving):* refuted by `net-c6-detach-20261115.log` — four re-attaches from the VM
+  in 2.0–2.7 s, each receiving a Parent Response. The discriminator was erased settings, not the radio.
+- *Dead end "dataset / credentials":* the gateway's MAC `RxErrSec` (run 5) cannot see an MLE-layer key failure, and the
+  key-hash check compared the stored key, not the derived ones. Run 7 failed for the same reason as the rest.
+- The fallback (attach in `main()` before the VM) is not needed and was not built.
+
+**Not established:** who holds the heap once the VM is up (code read points at `EntropyMixer`: `process.cc` →
+`mbedtls_entropy_func` keeps a hash context); why run 9 failed with the key set before the VM (rx 29, a different
+signature). Both are in #20.
+
+**Lesson:** a silent OpenThread failure gets one run with `CONFIG_ASSERT=y` before any bisecting.
