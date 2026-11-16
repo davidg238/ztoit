@@ -101,6 +101,12 @@ last close. An app that never opens the network never turns the radio on.
 
 Today `main.cc` brings Thread up before the VM; under this design the Thread provider does that instead.
 
+**Addendum 2026-11-15 (Plan 2 final review, #10):** the node is a sleepy end device always; "up" and "down"
+change only the poll period (100 ms up, half the child timeout down), because flipping rx-on/off stores to flash
+each time and the first switch forces a re-attach (OpenThread `mle.cpp` SetDeviceMode). A failed attach disables
+Thread. Open: a first attach fails once the VM is up (#19), so the first join may have to stay in `main.cc`
+before the VM (record: `2026-11-15-thread-first-attach.md`).
+
 **Reporting** follows the radio:
 
 - **Scheduled:** every `reportS` (e.g. 6 h), the supervisor opens the network itself and has the agent pull and
