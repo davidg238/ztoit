@@ -184,6 +184,8 @@ at the next report. Offline is k × `reportS`.
 - **Order of work.** One sensible order:
   1. stock container system boots on ztoit;
   2. network provider up/down;
+     - Measured 2026-11-15 (C6, `net_cycle.toit`): re-open as SED ~0.45 s, detached 2.0–2.7 s; attach timeout
+       60 s. nRF52840 + soak: FLASH 464,448 B, RAM 187,152 B. Early echoes drop after attach (#18).
   3. agent pull/push against porta's CoAP listener (rete#505);
   4. install (it must replace Plan 1's boot rule in `main.cc`, which erases the registry unless it holds exactly
      the firmware's images, so a container installed at runtime would be erased on the next boot);
