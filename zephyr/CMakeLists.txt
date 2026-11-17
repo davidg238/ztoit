@@ -7,6 +7,15 @@ if(CONFIG_SOC_SERIES_ESP32)
   target_sources(app PRIVATE src/esp32_fflush.c)
   zephyr_ld_options(-Wl,--wrap=fflush)
 endif()
+if(CONFIG_TOIT_AGENT)
+  target_sources(app PRIVATE src/agent/agent.c src/agent/msg.c)
+  # obs/build's strings: this tree's commit and the Toit fork's (ztoit#24).
+  execute_process(COMMAND git -C ${CMAKE_CURRENT_SOURCE_DIR} describe --always --dirty
+                  OUTPUT_VARIABLE ZTOIT_BUILD OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND git -C $ENV{TOIT_SRC} describe --always --dirty
+                  OUTPUT_VARIABLE ZTOIT_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
+  target_compile_definitions(app PRIVATE ZTOIT_BUILD="ztoit ${ZTOIT_BUILD}" ZTOIT_SDK="toit ${ZTOIT_SDK}")
+endif()
 option(OT_COUNTERS "Debug: print OpenThread MAC counters every minute (ztoit#18)" OFF)
 if(OT_COUNTERS)
   target_sources(app PRIVATE src/ot_counters.c)

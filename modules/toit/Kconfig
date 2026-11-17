@@ -34,3 +34,29 @@ config TOIT_WIFI_PSK
 	depends on WIFI
 	help
 	  Set in the git-ignored zephyr/prj_wifi.local.conf.
+
+config TOIT_AGENT
+	bool "The C agent: check in with porta over CoAP (rete #521)"
+	depends on NETWORKING && NET_IPV4
+	select COAP_CLIENT
+	select ZCBOR
+	select ZCBOR_CANONICAL
+	help
+	  On each new IPv4 address (each net.open on WiFi) pull the node's
+	  batch from porta and push obs/build. nodus-toit design §5, first slice.
+
+config TOIT_AGENT_PORTA
+	string "porta's CoAP address (IPv4 literal)"
+	depends on TOIT_AGENT
+	help
+	  Deployment-specific: set it in the git-ignored prj_wifi.local.conf.
+
+config TOIT_AGENT_PORT
+	int "porta's CoAP port"
+	default 5683
+	depends on TOIT_AGENT
+
+config TOIT_AGENT_STACK_SIZE
+	int "Agent thread stack"
+	default 3072
+	depends on TOIT_AGENT
