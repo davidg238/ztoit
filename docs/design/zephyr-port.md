@@ -92,3 +92,18 @@ Implements "peripherals come from Zephyr" above.
 - **Bare-board test.** The C6's BOOT button and on-board WS2812 (`ws2812-i2s`, data line only) need no wiring.
   `spi2` is disabled: the board dts puts it on GPIO6/7, `i2c0`'s pins.
 - **Driver quirk:** Zephyr's `bosch,bmp180` reports temperature on `DIE_TEMP`, not `AMBIENT_TEMP`.
+
+## Addendum 2026-11-17: a patched Zephyr for nRF Thread (#23)
+
+- **Zephyr carries one local patch,** `patches/zephyr-nrf-802154-hfclk-ready-deferred.patch`, applied by hand
+  in the west workspace (`git -C $ZEPHYR_BASE apply`); nothing applies it automatically yet. Without it an nRF
+  board whose HF crystal is already running (USB, on the dongle) panics on the first transmit from a sleeping
+  radio, which the always-sleepy node of design §7 does at once.
+- **Why:** `nrf_802154_clock_hfclk_start()` is asynchronous by contract, but with the clock already on Zephyr's
+  glue gets the onoff notification inside the request, and the open-source radio scheduler then changes the
+  driver's state in the middle of `nrf_802154_core_cca`. The patch delivers that notification from a `k_timer`
+  once it can take the driver's critical section. A one-tick deferral alone is not enough (it still panicked).
+- **Cost:** the patch declares two driver-internal functions by hand, and upstream `main` has the same glue, so
+  it must be carried until it is fixed upstream.
+- **Debug options** (off by default): `-DFATAL_DUMP=ON` reports a fatal error at the next boot (the USB CDC
+  console cannot print one), `-DHFCLK_HOLD=ON` reproduces the dongle's clock condition on a board without USB.
