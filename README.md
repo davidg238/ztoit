@@ -78,8 +78,11 @@ the first `net.open`, and after the last close stays attached as a sleepy end de
 (`-DCONFIG_TOIT_THREAD_DOWN_DETACH=y`: disables Thread instead).
 
 WiFi (WROOM-32, `-b esp32_devkitc/esp32/procpu`): copy `zephyr/prj_wifi.local.conf.example` to
-`prj_wifi.local.conf`, fill in your network's name and passphrase (the file is git-ignored; they are compiled
-into the image), and add `-DEXTRA_CONF_FILE="prj_wifi.conf;prj_wifi.local.conf"`. WPA2-PSK, 2.4 GHz, DHCP.
+`prj_wifi.local.conf` (git-ignored), fill in porta's address, and add
+`-DEXTRA_CONF_FILE="prj_wifi.conf;prj_wifi.local.conf"`. The image carries no network name or passphrase: the
+node connects to the one network in its settings store (Zephyr's `wifi_credentials`, in the `storage`
+partition, which an app flash leaves alone). The flashing tool will write it (#30); with the store empty,
+`net.open` throws `FILE_NOT_FOUND`. DHCP, IPv4.
 
 ## License
 

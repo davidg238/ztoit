@@ -23,18 +23,6 @@ config TOIT_THREAD_DOWN_DETACH
 	  Down = Thread disabled (each net.open rejoins); default: stay attached
 	  as a sleepy end device (ztoit design §7).
 
-config TOIT_WIFI_SSID
-	string "WiFi network name"
-	depends on WIFI
-	help
-	  Set in the git-ignored zephyr/prj_wifi.local.conf.
-
-config TOIT_WIFI_PSK
-	string "WiFi passphrase (WPA2-PSK)"
-	depends on WIFI
-	help
-	  Set in the git-ignored zephyr/prj_wifi.local.conf.
-
 config TOIT_AGENT
 	bool "The C agent: check in with porta over CoAP (rete #521)"
 	depends on NETWORKING && NET_IPV4
