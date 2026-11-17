@@ -1,0 +1,4 @@
+# Git-ignored: copy to prj_wifi.local.conf and fill in.
+CONFIG_TOIT_WIFI_SSID="your-ssid"
+CONFIG_TOIT_WIFI_PSK="your-passphrase"
+CONFIG_TOIT_AGENT_PORTA="192.168.0.176"
