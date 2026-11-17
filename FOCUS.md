@@ -10,10 +10,12 @@
   (PID 1405701). WROOM-32 on ttyUSB0 is rete-29's (its `build-wroom32-wifi` image restored 2026-11-17).
 - **Zephyr tree:** `~/zephyr-esp32/zephyr` carries `patches/zephyr-nrf-802154-hfclk-ready-deferred.patch`
   uncommitted; re-apply after any west update (`docs/design/zephyr-port.md` addendum 2026-11-17).
-- **Awaiting David:** push `main` and the fork branch (never pushed unasked). #26 go to report upstream. Where the
+- **Awaiting David:** `main` is 2 ahead of origin (`29683dc` README + this) — DO NOT push until #30 lands (David 2026-11-17). #26 go to report upstream. Where the
   Zephyr patch lives long-term. XIAO nRF54L15 Sense. Tell rete its C6 conf has the -60 dBm ED CCA (#18)?
   Remove worktrees `~/ztoit-wroom32`, `~/toit-wroom32` once rete-29 is done with them?
 - **Decided:** #23 = radio-driver panic with the HF clock already on, fixed by the patch (16.8 h dongle soak, #23).
   A fatal on the dongle is silent over CDC: use `-DFATAL_DUMP=ON`. #18 RX fixed; TX = C6 ED CCA (#18 17:54).
   wroom32-wifi merged `a60917e`; soak before #25 closes (#25). Never halt a running nRF (#23).
-- **Open P2:** #25, #23, #18, #8, #12, #4, #24. **P3:** #2, #3, #5, #9, #13–#17, #20–#22, #26–#29.
+  WiFi credentials move to a run-time store, cc-rete builds it, faber writes them; no shell stopgap (#30).
+  Fork is pushed as `wip-plan2-wifi`; remote `wip-plan2-fix-a` is the stale pre-rebase commit, not forced.
+- **Open P2:** #25, #30, #23, #18, #8, #12, #4, #24. **P3:** #2, #3, #5, #9, #13–#17, #20–#22, #26–#29.
