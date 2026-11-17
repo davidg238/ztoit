@@ -1,14 +1,16 @@
 # Focus
 
-- **Next session starts with (Opus):** branch `main`, focus **#18 TX loss**.
-  1. Compare the C6 soaks: `grep -a "uptime" ~/.local/state/ztoit/soak-c6-prefix-20261116.log | tail -1`
-     (pre-fix udp_zephyr.cc, `build-soak-prefix`, from 10:34 on 11-16) against 445a28ac's 107/7178 UDP
-     failures (#18 comment 11-16 10:25). Same rate → the fix is innocent; root-cause the TX loss (requests
-     never reach the gateway; rete F11 ND lead). Then reflash `build-soak` (445a28ac).
-  2. Plan 2 fixes (A + I2, #10): rebase fork `wip-plan2-fix-a` (`99b45eae`) onto `445a28ac`, then as before.
-- **Boards:** C6 on `build-soak-prefix`, logger 1027714. Dongle 2dbf on `445a28ac` from 10:37, logger 1032880
-  (bb866c16 run: 0 UDP losses after boot in 16 h). a6b3 silent (#12), logger 632379. `rete-custos` stays disabled.
-- **Awaiting David:** XIAO nRF54L15 Sense.
-- **Decided:** #18 RX = consume-before-allocate in UDP `receive`, fixed in fork `445a28ac` (#18 comment
-  11-16 00:3x). #19 = 512 B mbedTLS heap. "Down" = SED poll period. Thread tests start from erased OT settings.
-- **Open P2:** #18, #8, #12, #4. **P3:** #2, #3, #5, #9, #13–#17, #20, #21.
+- **Next session starts with (Opus):** branch `main`, focus **#23 dongle hang** (blocks #10 step 2 on nRF).
+  1. Build Plan 2 for the dongle with `CONFIG_LOG` immediate + fault dump (fork `wip-plan2-fix-a`, `tools/fork-sdk.sh`
+     first, Thread conf per #22), DFU to 2dbf (David presses RESET), read the CDC log for a fatal. Ruled-out list in #23.
+  2. If silent: bisect 445a28ac→08e79a85 on the dongle (thread_up/down, network.toit, `thread_down` arity).
+  3. #18 (second): make carrier-sense CCA the C6 default, then split 47a4's residual 0.54 % at the gateway (#18 17:54).
+- **Boards (all mine to reflash, memory):** 47a4 (ttyUSB1) Plan 2 + counters + carrier CCA, logger 1089768.
+  2dbf hung on the erase-settings debug image, logger 1241315. a6b3 silent (#12), logger 632379.
+  DK-base nRF52840 on the J-Link, Plan 2 soak, console over RTT (`JLinkExe savebin`, never halt it).
+  c6spare unplugged (its USB port feeds the J-Link). `rete-custos` stays disabled.
+- **Awaiting David:** XIAO nRF54L15 Sense. Whether to tell rete its C6 conf has the same -60 dBm ED CCA (#18).
+- **Decided:** #18 RX fixed (fork 445a28ac); #18 TX = C6 ED CCA false busy, carrier sense 3× better (#18 17:54).
+  #19 = 512 B mbedTLS heap. Plan 2 attaches from erased settings on C6 + DK nRF (#10). Never halt a running nRF to
+  diagnose (it froze the clock, #23). Fork rebased branch is `wip-plan2-fix-a-445` on the fork remote.
+- **Open P2:** #23, #18, #8, #12, #4. **P3:** #2, #3, #5, #9, #13–#17, #20–#22.

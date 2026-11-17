@@ -192,6 +192,10 @@ at the next report. Offline is k × `reportS`.
   2. network provider up/down;
      - Measured 2026-11-15 (C6, `net_cycle.toit`): re-open as SED ~0.45 s, detached 2.0–2.7 s; attach timeout
        60 s. nRF52840 + soak: FLASH 464,448 B, RAM 187,152 B. Early echoes drop after attach (#18).
+     - Measured 2026-11-16 (Plan 2 fixes A + I2, fork 08e79a85, always SED): C6 first attach from erased
+       settings 1418 ms, from a stored child 212 ms; DK-base nRF52840 1107 ms, soak 666/666. The nRF52840
+       dongle hangs at boot on the same VM (#23). C6 needs carrier-sense CCA: energy detect at -60 dBm drops
+       frames after false busy (#18).
   3. agent pull/push against porta's CoAP listener (rete#505);
   4. install (it must replace Plan 1's boot rule in `main.cc`, which erases the registry unless it holds exactly
      the firmware's images, so a container installed at runtime would be erased on the next boot);
