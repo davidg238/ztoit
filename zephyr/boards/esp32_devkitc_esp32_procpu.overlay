@@ -1,0 +1,16 @@
+/* WROOM-32 (4 MB flash; the vindriktning's ezSBC ESP32 Feather), #521 spike.
+ * Toit's flash registry (flash_registry_zephyr.cc) takes the space the default
+ * table gives MCUboot's second slot and the APP CPU images, which ztoit does not
+ * use: 0x170000-0x3a0000, 2240 KB. */
+/delete-node/ &slot1_partition;
+/delete-node/ &slot0_appcpu_partition;
+/delete-node/ &slot1_appcpu_partition;
+
+&flash0 {
+	partitions {
+		toit_partition: partition@170000 {
+			label = "toit";
+			reg = <0x170000 0x230000>;
+		};
+	};
+};

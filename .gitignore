@@ -1,5 +1,6 @@
 zephyr/build/
 prj_thread.local.conf
+prj_wifi.local.conf
 spike/baseline/base.envelope
 spike/baseline/hello.snapshot
 build-nrf/

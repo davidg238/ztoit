@@ -9,9 +9,28 @@ config TOIT_HEAP_SIZE
 	default 163840
 	depends on TOIT
 
+config TOIT_HEAP_NOINIT
+	bool "Put the arena in .noinit"
+	depends on TOIT
+	help
+	  On the ESP32 with ESP32_REGION_1_NOINIT this moves the arena to the
+	  second DRAM bank, leaving the first to the C heap.
+
 config TOIT_THREAD_DOWN_DETACH
 	bool "Thread down = disabled"
 	depends on NET_L2_OPENTHREAD
 	help
 	  Down = Thread disabled (each net.open rejoins); default: stay attached
 	  as a sleepy end device (ztoit design §7).
+
+config TOIT_WIFI_SSID
+	string "WiFi network name"
+	depends on WIFI
+	help
+	  Set in the git-ignored zephyr/prj_wifi.local.conf.
+
+config TOIT_WIFI_PSK
+	string "WiFi passphrase (WPA2-PSK)"
+	depends on WIFI
+	help
+	  Set in the git-ignored zephyr/prj_wifi.local.conf.
