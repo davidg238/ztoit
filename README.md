@@ -4,17 +4,21 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 
 **What the spike shows:**
 
-- **The Toit interpreter runs on Zephyr**, on three SoCs:
+- **The Toit interpreter runs on Zephyr**, on four SoCs:
   - ESP32-C6 (RISC-V)
+  - ESP32 (WROOM-32, Xtensa LX6)
   - nRF52840 (Arm Cortex-M4)
   - RP2350B (Arm Cortex-M33)
 
   Stock Toit needed one VM change, in the flash registry; the rest is new Zephyr platform code, plus the
   `zephyr` primitive module (appended after the stock modules, so a forked compiler is needed for now).
-- **Programs run from flash in place (XIP)**, installed in a flash registry, on the C6 and the nRF52840
+- **Programs run from flash in place (XIP)**, installed in a flash registry, on the C6, the WROOM-32 and the nRF52840
   (the RP2350B installs into RAM: Zephyr has no flash driver for its QSPI controller yet).
 - **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on the C6 and the nRF52840; the nRF52840
   dongle runs a UDP + TCP echo soak on a wall wart. (The RP2350B has no radio.)
+- **IPv4 over WiFi** on the WROOM-32: the station associates on the first `net.open` and disconnects after
+  the last close; `zephyr/toit/wifi_echo.toit` does a UDP echo each cycle. A build carries one link, Thread or
+  WiFi, and its sockets take that link's family (no IPv6 on WiFi, no IPv4 on Thread).
 - **At least as fast as stock Toit** on a simple benchmark ([STIC](https://github.com/davidg238/performance_stic), same ESP32-C6, v2.0.0 both sides):
   interpreter-bound rows match, allocation-heavy rows are 1.2–2.2× faster (cause not yet measured, #2).
   STIC on all three CPUs: `spike/step4/`.
@@ -49,7 +53,7 @@ Design decisions: `docs/design/zephyr-port.md`. Known issues and open work: GitH
 ## Build
 
 Needs the Zephyr SDK 0.17.4, the [Toit SDK v2.0.0](https://github.com/toitlang/toit/releases/tag/v2.0.0) for the
-host compiler, and an ESP32-C6 board, an nRF52840 dongle or an RP2350B board.
+host compiler, and an ESP32-C6 board, an ESP32 (WROOM-32) board, an nRF52840 dongle or an RP2350B board.
 
     west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update
     west blobs fetch hal_espressif
@@ -72,6 +76,10 @@ Thread: copy `zephyr/prj_thread.local.conf.example` to `prj_thread.local.conf`, 
 dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6 or nRF52840). The node joins on
 the first `net.open`, and after the last close stays attached as a sleepy end device
 (`-DCONFIG_TOIT_THREAD_DOWN_DETACH=y`: disables Thread instead).
+
+WiFi (WROOM-32, `-b esp32_devkitc/esp32/procpu`): copy `zephyr/prj_wifi.local.conf.example` to
+`prj_wifi.local.conf`, fill in your network's name and passphrase (the file is git-ignored; they are compiled
+into the image), and add `-DEXTRA_CONF_FILE="prj_wifi.conf;prj_wifi.local.conf"`. WPA2-PSK, 2.4 GHz, DHCP.
 
 ## License
 
