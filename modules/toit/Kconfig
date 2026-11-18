@@ -25,7 +25,8 @@ config TOIT_THREAD_DOWN_DETACH
 
 config TOIT_AGENT
 	bool "The C agent: check in with porta over CoAP (rete #521)"
-	depends on NETWORKING && NET_IPV4
+	depends on NETWORKING && (NET_IPV4 || NET_IPV6)
+	depends on SETTINGS
 	select COAP_CLIENT
 	select ZCBOR
 	select ZCBOR_CANONICAL
@@ -33,15 +34,19 @@ config TOIT_AGENT
 	select MBEDTLS_SHA256
 	select REBOOT
 	help
-	  On each new IPv4 address (each net.open on WiFi) pull the node's
-	  batch from porta and push obs/build; install goal/apps images
-	  (nodus-toit design §5, addendum 2026-11-17).
+	  On each net.open that brings the link up (WiFi: the IPv4 lease;
+	  Thread: thread_up) pull the node's batch from porta and push
+	  obs/build; install goal/apps images (nodus-toit design §5, addendum
+	  2026-11-17). Its records need SETTINGS, which each link's conf
+	  already enables (WiFi credentials, the OpenThread dataset).
 
 config TOIT_AGENT_PORTA
-	string "porta's CoAP address (IPv4 literal)"
+	string "porta's CoAP address (a literal of the build's family)"
 	depends on TOIT_AGENT
 	help
-	  Deployment-specific: set it in the git-ignored prj_wifi.local.conf.
+	  IPv6 when the build has it (Thread), else IPv4 (WiFi), as the VM's
+	  sockets. Deployment-specific: set it in the link's git-ignored
+	  prj_*.local.conf.
 
 config TOIT_AGENT_PORT
 	int "porta's CoAP port"

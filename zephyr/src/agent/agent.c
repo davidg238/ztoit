@@ -1,7 +1,8 @@
 // The C agent's check-in (nodus-toit design §5, rete #521): first slice.
 //
-// Piggyback (design §7): each time the network gains an address, which on
-// WiFi is each net.open, the agent checks in with porta over CoAP:
+// Piggyback (design §7): each time the link comes up for a net.open (WiFi: the
+// IPv4 lease; Thread: the fork's thread_up calls ztoit_link_up), the agent
+// checks in with porta over CoAP:
 //   POST /space #pull  -> #batch (logged; the cursor advances)
 //   POST /space #push  -> #ack   (obs/build, once per boot, until acked;
 //                                  obs/apps/<name> after an install, until acked)
@@ -36,8 +37,7 @@
 static struct coap_client client;
 static K_SEM_DEFINE(addr_sem, 0, 1);
 static K_SEM_DEFINE(reply_sem, 0, 1);
-static struct net_mgmt_event_callback addr_cb;
-// A check-in is owed from the moment the address arrives until it ends, so a
+// A check-in is owed from the moment the link comes up until it ends, so a
 // link taken down in between waits for it (ztoit_link_going_down).
 static atomic_t owed;
 static K_SEM_DEFINE(settled_sem, 0, 1);
@@ -130,7 +130,19 @@ static bool exchange(int sock, const struct sockaddr* porta, size_t len, struct 
 // request's fd, so closing it per check-in let a reused fd number deliver a
 // stale error (-EINVAL) into the next exchange.
 static int sock = -1;
+// The build's family, the VM's rule (the fork's socket_address_zephyr.h):
+// IPv6 when the build has it (Thread), else IPv4 (WiFi).
+#if defined(CONFIG_NET_IPV6)
+#define PORTA_FAMILY AF_INET6
+static struct sockaddr_in6 porta = {.sin6_family = AF_INET6};
+#define PORTA_PORT porta.sin6_port
+#define PORTA_ADDR porta.sin6_addr
+#else
+#define PORTA_FAMILY AF_INET
 static struct sockaddr_in porta = {.sin_family = AF_INET};
+#define PORTA_PORT porta.sin_port
+#define PORTA_ADDR porta.sin_addr
+#endif
 
 // --- Install ------------------------------------------------------------------
 
@@ -418,12 +430,26 @@ static void check_in(void) {
 
 // --- Thread -------------------------------------------------------------------
 
-static void on_addr(struct net_mgmt_event_callback* cb, uint64_t event, struct net_if* iface) {
+static void owe_check_in(void) {
   k_sem_reset(&settled_sem);
   atomic_set(&going_down_at, 0);
   atomic_set(&owed, 1);
   k_sem_give(&addr_sem);
 }
+
+// Thread: the fork's thread_up, on each net.open that brings the link up.
+// The first after a boot can come before the attach; CoAP retransmits.
+void ztoit_link_up(void) {
+  owe_check_in();
+}
+
+#if !defined(CONFIG_NET_IPV6)
+// WiFi: the lease, which comes after wifi_up returns.
+static struct net_mgmt_event_callback addr_cb;
+static void on_addr(struct net_mgmt_event_callback* cb, uint64_t event, struct net_if* iface) {
+  owe_check_in();
+}
+#endif
 
 // The fork's wifi_down calls this before disconnecting. Without it an app that
 // closes the network straight after its own exchange cut the agent's check-in
@@ -467,12 +493,12 @@ static void agent_main(void* a, void* b, void* c) {
     printk("agent: no link address: no check-ins\n");  // the id is never configured or defaulted
     return;
   }
-  porta.sin_port = htons(CONFIG_TOIT_AGENT_PORT);
-  if (zsock_inet_pton(AF_INET, CONFIG_TOIT_AGENT_PORTA, &porta.sin_addr) != 1) {
+  PORTA_PORT = htons(CONFIG_TOIT_AGENT_PORT);
+  if (zsock_inet_pton(PORTA_FAMILY, CONFIG_TOIT_AGENT_PORTA, &PORTA_ADDR) != 1) {
     printk("agent: bad porta address '%s': no check-ins\n", CONFIG_TOIT_AGENT_PORTA);
     return;
   }
-  sock = zsock_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  sock = zsock_socket(PORTA_FAMILY, SOCK_DGRAM, IPPROTO_UDP);
   if (sock < 0) {
     printk("agent: socket failed (%d): no check-ins\n", errno);
     return;
@@ -480,8 +506,10 @@ static void agent_main(void* a, void* b, void* c) {
   count_boot();
   set_up_installs();
   coap_client_init(&client, "agent");
+#if !defined(CONFIG_NET_IPV6)
   net_mgmt_init_event_callback(&addr_cb, on_addr, NET_EVENT_IPV4_ADDR_ADD);
   net_mgmt_add_event_callback(&addr_cb);
+#endif
   printk("agent: id %s, boot %lld, porta %s:%d\n", id, (long long)bid, CONFIG_TOIT_AGENT_PORTA,
          CONFIG_TOIT_AGENT_PORT);
   while (true) {
