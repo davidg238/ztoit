@@ -1,2 +1,4 @@
-# Git-ignored: copy to prj_wifi.local.conf and fill in.
-CONFIG_TOIT_AGENT_PORTA="192.168.0.176"
+# Git-ignored: copy to prj_wifi.local.conf and fill in. Only the agent (prj_agent.conf) reads these.
+CONFIG_TOIT_AGENT_PORTA="192.0.2.10"
+# The gateway's ed25519 public key, 64 hex digits. Empty: nothing installs.
+CONFIG_TOIT_AGENT_PUBKEY=""

@@ -77,12 +77,16 @@ dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6
 the first `net.open`, and after the last close stays attached as a sleepy end device
 (`-DCONFIG_TOIT_THREAD_DOWN_DETACH=y`: disables Thread instead).
 
-WiFi (WROOM-32, `-b esp32_devkitc/esp32/procpu`): copy `zephyr/prj_wifi.local.conf.example` to
-`prj_wifi.local.conf` (git-ignored), fill in porta's address, and add
-`-DEXTRA_CONF_FILE="prj_wifi.conf;prj_wifi.local.conf"`. The image carries no network name or passphrase: the
-node connects to the one network in its settings store (Zephyr's `wifi_credentials`, in the `storage`
-partition, which an app flash leaves alone). The flashing tool will write it (#30); with the store empty,
-`net.open` throws `FILE_NOT_FOUND`. DHCP, IPv4.
+WiFi (WROOM-32, `-b esp32_devkitc/esp32/procpu`): add `-DEXTRA_CONF_FILE="prj_wifi.conf"`. The image carries no
+network name or passphrase: the node connects to the one network in its settings store (Zephyr's
+`wifi_credentials`, in the `storage` partition, which an app flash leaves alone), written at flash time by a
+host tool (#30). With the store empty, `net.open` throws `FILE_NOT_FOUND`. DHCP, IPv4.
+
+Agent (optional, WiFi or Thread): add `prj_agent.conf` and a git-ignored local conf (`prj_wifi.local.conf` or
+`prj_thread.local.conf`, see the `.example` files) with the gateway's address and its public signing key. At
+each `net.open` the agent checks in over CoAP; a signed container image named by the gateway is fetched into a
+staging partition, verified (SHA-256, ed25519), and installed into the registry at the next boot (#31;
+`docs/design/2026-11-15-nodus-toit-design.md`). Shown on the WROOM-32 over WiFi and the ESP32-C6 over Thread.
 
 ## License
 

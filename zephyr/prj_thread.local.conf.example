@@ -4,3 +4,6 @@ CONFIG_OPENTHREAD_PANID=4660
 CONFIG_OPENTHREAD_CHANNEL=11
 CONFIG_OPENTHREAD_XPANID="de:ad:00:be:ef:00:ca:fe"
 CONFIG_OPENTHREAD_NETWORK_NAME="OpenThread"
+# Only with the agent (prj_agent.conf): the gateway's IPv6 address and its ed25519 public key (64 hex digits).
+# CONFIG_TOIT_AGENT_PORTA="fd00::1"
+# CONFIG_TOIT_AGENT_PUBKEY=""
