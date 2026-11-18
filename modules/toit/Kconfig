@@ -29,9 +29,13 @@ config TOIT_AGENT
 	select COAP_CLIENT
 	select ZCBOR
 	select ZCBOR_CANONICAL
+	select MBEDTLS
+	select MBEDTLS_SHA256
+	select REBOOT
 	help
 	  On each new IPv4 address (each net.open on WiFi) pull the node's
-	  batch from porta and push obs/build. nodus-toit design §5, first slice.
+	  batch from porta and push obs/build; install goal/apps images
+	  (nodus-toit design §5, addendum 2026-11-17).
 
 config TOIT_AGENT_PORTA
 	string "porta's CoAP address (IPv4 literal)"
@@ -44,7 +48,20 @@ config TOIT_AGENT_PORT
 	default 5683
 	depends on TOIT_AGENT
 
+config TOIT_AGENT_PUBKEY
+	string "porta's ed25519 public key (64 hex digits, porta's pub key file)"
+	default ""
+	depends on TOIT_AGENT
+	help
+	  Images are installed only if signed by this key. Deployment-specific:
+	  set it in the git-ignored local conf. Empty: nothing installs, and the
+	  agent says so on the console.
+
 config TOIT_AGENT_STACK_SIZE
 	int "Agent thread stack"
-	default 3072
+	default 5120
 	depends on TOIT_AGENT
+	help
+	  The ed25519 check is the deepest path: about 4.1 KB on the ESP32
+	  (gcc -fstack-usage, 2026-11-17: ed25519_verify 2352 + add 1200 +
+	  M 304 + the agent's frames), where a check-in needed 3072.
