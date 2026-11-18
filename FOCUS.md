@@ -3,7 +3,7 @@
 - **Next session starts with (Opus):** branch `main`, focus **#31 agent install** — finish the hardware proofs.
   1. On the WROOM-32 (ttyUSB0): a keep=false run-once; a bad signature (§9 test 4); a power cut mid-fetch
      (§9 test 3). Expected console lines: #31 trial comment. Replace and pushes are proven (#31 19:18).
-  2. #34: one SDK identity for node and host tool, so an install stops needing `--force`.
+  2. #24: one SDK identity for node and host tool (awaiting David), so an install stops needing `--force`.
   3. README: WiFi/agent builds now need `prj_agent.conf` in `EXTRA_CONF_FILE`; `west.yml` fork pin once pushed.
 - **Boards:** WROOM-32 `build-i31` (WiFi + agent, `hello31` installed OTA), logger `i31-wroom-d-20261117.log`.
   C6 47a4 `build-i31-c6-agent` (Thread + agent, `hello31` installed OTA), logger `i31-c6-20261117.log`.
@@ -19,4 +19,4 @@
 - **Decided:** install stages to `scratch_partition`, verifies, reboots, `main()` installs before the VM
   (design addendum 2026-11-17). Uninstall waits for rete#519. `FlashRegistry::flush()` must really flush on
   Espressif (#33). WiFi credentials come from the settings store (#30). Never halt a running nRF (#23).
-- **Open P2:** #31, #30, #23, #18, #8, #12, #4, #24. **P3:** #2, #3, #5, #9, #10, #13–#17, #20–#22, #26–#29, #32–#34.
+- **Open P2:** #31, #30, #23, #18, #8, #12, #4, #24. **P3:** #2, #3, #5, #9, #10, #13–#17, #20–#22, #26–#29, #32, #33.
