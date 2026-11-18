@@ -1,8 +1,8 @@
 # Focus
 
 - **Next session starts with (Opus):** branch `main`, focus **#31 agent install** — finish the hardware proofs.
-  1. On the WROOM-32 (ttyUSB0): a keep=false run-once; a bad signature (§9 test 4); a power cut mid-fetch
-     (§9 test 3). Expected console lines: #31 trial comment. Replace and pushes are proven (#31 19:18).
+  1. On the WROOM-32: a bad signature (§9 test 4); a power cut mid-fetch
+     (§9 test 3); push obs/apps after a run-once erase. Replace, pushes, run-once are proven (#31).
   2. Rerun `tools/fork-sdk.sh` after any fork commit, or the host tool refuses on the SDK identity (#24).
   3. README: WiFi/agent builds now need `prj_agent.conf` in `EXTRA_CONF_FILE`; `west.yml` fork pin once pushed.
 - **Boards:** WROOM-32 (now ttyUSB2; use the by-id path) `build-i31` (WiFi + agent, `hello31` installed OTA), logger `i24-wroom-20261117.log`.
