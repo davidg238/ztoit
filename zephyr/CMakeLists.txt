@@ -17,12 +17,14 @@ if(CONFIG_TOIT_AGENT)
   # Vendored TweetNaCl (ed25519.c's header): kept byte for byte, warnings and all.
   set_source_files_properties(src/agent/ed25519.c PROPERTIES COMPILE_OPTIONS -w)
   target_link_libraries(app PRIVATE mbedTLS)
-  # obs/build's strings: this tree's commit and the Toit fork's (ztoit#24).
-  execute_process(COMMAND git -C ${CMAKE_CURRENT_SOURCE_DIR} describe --always --dirty
-                  OUTPUT_VARIABLE ZTOIT_BUILD OUTPUT_STRIP_TRAILING_WHITESPACE)
-  execute_process(COMMAND git -C $ENV{TOIT_SRC} describe --always --dirty
-                  OUTPUT_VARIABLE ZTOIT_SDK OUTPUT_STRIP_TRAILING_WHITESPACE)
-  target_compile_definitions(app PRIVATE ZTOIT_BUILD="ztoit ${ZTOIT_BUILD}" ZTOIT_SDK="toit ${ZTOIT_SDK}")
+  # obs/build's strings, taken at every build, not at configure (ztoit#24).
+  set(ids ${CMAKE_CURRENT_BINARY_DIR}/ztoit_ids.h)
+  add_custom_target(ztoit_ids
+    COMMAND ${CMAKE_COMMAND} -DOUT=${ids} -DSRC=${CMAKE_CURRENT_SOURCE_DIR}/..
+            -DTOIT_SRC=$ENV{TOIT_SRC} -DTOIT_HOST=$ENV{TOIT_HOST} -P ${CMAKE_CURRENT_SOURCE_DIR}/ztoit_ids.cmake
+    BYPRODUCTS ${ids} VERBATIM)
+  add_dependencies(app ztoit_ids)
+  target_include_directories(app PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 endif()
 option(OT_COUNTERS "Debug: print OpenThread MAC counters every minute (ztoit#18)" OFF)
 if(OT_COUNTERS)

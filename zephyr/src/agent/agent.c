@@ -30,6 +30,7 @@
 
 #include "msg.h"
 #include "store.h"
+#include "ztoit_ids.h"  // ZTOIT_SDK, ZTOIT_BUILD: generated each build (zephyr/ztoit_ids.cmake)
 
 #define REPLY_MAX CONFIG_COAP_CLIENT_MESSAGE_SIZE
 #define TIMEOUT_MS 15000
