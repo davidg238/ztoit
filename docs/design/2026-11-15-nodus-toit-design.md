@@ -255,3 +255,25 @@ are the record of what should be on the node.
   a removed goal is settled on the porta side.
 - ed25519: mbedTLS in the tree has no EdDSA. Verify-only code is vendored (public domain), not written here.
 - WROOM-32 over WiFi first. Thread boards follow when the agent's check-in runs over IPv6.
+
+## Addendum 2026-11-17 (later): install as built (#31), SDK identity (#24)
+
+Where the build differs from the addendum above, and why. Evidence is on #31.
+
+- **Two records, not one.** `agent/stage` (fetching, verified, refused) and `agent/app/<name>` (installed, ran,
+  erased), in `zephyr/src/agent/store.c`: with one record a refused or half-fetched image would overwrite what is
+  installed under that name. `erased` is kept so a run-once goal does not install again.
+- **One GET per block.** Zephyr's `coap_client` cannot start a Block2 transfer at block n > 0, so the agent
+  asks for each block itself; resume is the first erased block minus one (a cut can leave a block half-written).
+- **A fetch continues after `ztoit_link_going_down`** for the agent's `TIMEOUT_MS`: an app's `net.close` can
+  wait that long while an image is fetching. Without it a 30 s cycle fetched about one block per cycle.
+- **`main()` starts the agent** after the boot install, so the agent never touches the records while `main`
+  changes them. A staged image that cannot be installed is marked refused, not a FATAL that loops every boot.
+- **The agent runs on Thread too.** Sockets take the build's family; the check-in is owed on each `thread_up`
+  (weak `ztoit_link_up()` in the fork); the agent's conf is `zephyr/prj_agent.conf`. The first check-in after
+  boot fails before the attach (#32).
+- **Run-once is the boot rule's, not a supervisor's.** `keep = false` is erased at the boot after it ran, and
+  nothing is pushed after the erase, so `obs/apps/<name>` still shows the image. Open on #31.
+- **SDK identity (§6, #24).** Node and host tool report `tools/sdk-id.sh`'s string, `<stock version>+zephyr.<fork
+  commit>`; `tools/fork-sdk.sh` stamps it into `$TOIT_HOST version`, the firmware stamps it at build time
+  (`zephyr/ztoit_ids.cmake`). A fork commit without a rerun of `fork-sdk.sh` is a mismatch by design.

@@ -107,3 +107,15 @@ Implements "peripherals come from Zephyr" above.
   it must be carried until it is fixed upstream.
 - **Debug options** (off by default): `-DFATAL_DUMP=ON` reports a fatal error at the next boot (the USB CDC
   console cannot print one), `-DHFCLK_HOLD=ON` reproduces the dongle's clock condition on a board without USB.
+
+## Addendum 2026-11-17: the mapped registry needs a real flush on Espressif (#31, #33)
+
+- **Found:** `FlashAllocation::commit` failed 2 of 3 over-the-air installs on the WROOM-32 while the header was
+  in flash. A boot-time reproducer (read a page through the mapping, write it, read again) gave 32 of 32 pages
+  stale on the WROOM-32 and on the ESP32-C6.
+- **Cause, as far as measured:** `esp_mmu_paddr_find_caps()` answers not-found for the registry's
+  `spi_flash_mmap` mapping, so the HAL's write skips its cache flush. Why the lookup misses is open (#33).
+- **Fix (fork `50f0be99`, `7fb2838e`):** `FlashRegistry::flush()` calls `cache_sync()` on the ESP32 and
+  `cache_hal_invalidate_addr()` over the mapping on the other Espressif SoCs; 0 of 32 stale after.
+- **Invalidates** the earlier comment in `flash_registry_zephyr.cc` that Espressif's write keeps the mapped view
+  coherent. Earlier installs passed because the pages had not been read before they were written.
