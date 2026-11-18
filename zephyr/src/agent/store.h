@@ -62,6 +62,9 @@ int store_stage_clear(void);
 
 bool store_app_load(const char* name, struct store_app* out);
 int store_app_save(const char* name, const struct store_app* app);
+// Marks agent/app/<name> unreported, so the agent pushes obs/apps/<name> again
+// (a refused new image under that name: #38). No record: nothing to say.
+void store_app_unreport(const char* name);
 
 // Calls fn for each agent/app/<name> record.
 typedef void (*store_app_fn)(const char* name, struct store_app* app, void* ctx);

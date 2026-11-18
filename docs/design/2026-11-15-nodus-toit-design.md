@@ -278,8 +278,11 @@ Where the build differs from the addendum above, and why. Evidence is on #31.
   2026-11-18, #31).
 - **The container that opens the link must outlive a failed open (#35).** One WiFi connect timeout or Thread
   attach timeout used to end `wifi_echo` / `net_cycle`, and with them every check-in until a reset; they now
-  catch it and retry next cycle. Proven both ways on 2026-11-18. A refused install is still only printed,
-  not pushed (#38).
+  catch it and retry next cycle. Proven both ways on 2026-11-18.
+- **A refused install is pushed as `lifecycle: #refused` on the installed image (#38).** `obs/apps/<name>` keeps
+  the hash that still runs (custos reads it as running; `app-obs` has no field for a second hash), and says
+  `#refused` while `agent/stage` holds a refusal of that name; a new goal clears it. A refused first install
+  has no record and is only printed (David 2026-11-18).
 - **SDK identity (§6, #24).** Node and host tool report `tools/sdk-id.sh`'s string, `<stock version>+zephyr.<fork
   commit>`; `tools/fork-sdk.sh` stamps it into `$TOIT_HOST version`, the firmware stamps it at build time
   (`zephyr/ztoit_ids.cmake`). A fork commit without a rerun of `fork-sdk.sh` is a mismatch by design.

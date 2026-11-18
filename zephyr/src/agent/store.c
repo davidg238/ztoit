@@ -102,6 +102,13 @@ int store_app_save(const char* name, const struct store_app* app) {
   return settings_save_one(key, app, sizeof(*app));
 }
 
+void store_app_unreport(const char* name) {
+  struct store_app app;
+  if (!store_app_load(name, &app) || !app.reported) return;
+  app.reported = 0;
+  store_app_save(name, &app);
+}
+
 // The records are walked by name, one load pass per record: the callback only
 // reads, so fn may save or delete. Apps are few.
 struct next {

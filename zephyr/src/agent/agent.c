@@ -170,11 +170,14 @@ static void resync(void) {
   resync_pending = true;
 }
 
+static void refused_report(const char* name);
+
 static void refuse(const char* why) {
   printk("agent: %s %s refused: %s\n", stage.name, hex8(stage.hash), why);
   staging->erase(staging->ctx);
   stage.state = STAGE_REFUSED;
   store_stage_save(&stage);
+  refused_report(stage.name);
   resync();
 }
 
@@ -183,8 +186,10 @@ static void consider(const char* name, const struct msg_app* app) {
   struct store_app installed;
   bool same_name = stage.state != 0 && strcmp(stage.name, name) == 0;
   if (store_app_load(name, &installed) && memcmp(installed.hash, app->hash, STAGE_HASH_SIZE) == 0) {
-    if (same_name && stage.state == STAGE_FETCHING) {
-      printk("agent: %s: the goal is the installed image again: fetch dropped\n", name);
+    if (same_name && (stage.state == STAGE_FETCHING || stage.state == STAGE_REFUSED)) {
+      printk("agent: %s: the goal is the installed image again: %s dropped\n", name,
+             stage.state == STAGE_REFUSED ? "refusal" : "fetch");
+      if (stage.state == STAGE_REFUSED) refused_report(name);  // #running again
       stage.state = 0;
       store_stage_clear();
       resync();
@@ -206,6 +211,8 @@ static void consider(const char* name, const struct msg_app* app) {
     printk("agent: staging erase failed\n");
     return;
   }
+  // A refusal this replaces is no longer said: obs/apps of its name goes again.
+  if (stage.state == STAGE_REFUSED) refused_report(stage.name);
   memset(&stage, 0, sizeof(stage));
   strcpy(stage.name, name);
   memcpy(stage.hash, app->hash, STAGE_HASH_SIZE);
@@ -383,13 +390,28 @@ static void find_unreported(const char* name, struct store_app* app, void* ctx) 
   }
 }
 
+// obs/apps/<name> keeps the installed image (custos reads it as running), so a
+// refused new image under that name is said by the lifecycle alone: #refused
+// while the stage holds the refusal (#38). A refused first install has no record.
+static const char* obs_lifecycle(const char* name, const struct store_app* app) {
+  if (stage.state == STAGE_REFUSED && strcmp(stage.name, name) == 0) return "refused";
+  return app->state == APP_ERASED ? "erased" : "running";
+}
+
+// The record goes unreported; a push of it in flight is dropped, so the
+// #refused one goes with a new seq rather than resending the old one's.
+static void refused_report(const char* name) {
+  store_app_unreport(name);
+  if (strcmp(report.name, name) == 0) memset(&report, 0, sizeof(report));
+}
+
 static void push_obs_app(void) {
   if (report.name[0] == 0) store_apps_each(find_unreported, NULL);
   if (report.name[0] == 0) return;
   if (report.seq == 0) report.seq = ++node_seq;
   struct msg_reply r;
   int64_t mono = k_uptime_get();
-  const char* lifecycle = report.app.state == APP_ERASED ? "erased" : "running";
+  const char* lifecycle = obs_lifecycle(report.name, &report.app);
   size_t len = msg_push_app(request, sizeof(request), id, bid, mono, report.seq, report.name, report.app.hash,
                             report.app.size, lifecycle);
   if (len && exchange(sock, (struct sockaddr*)&porta, len, &r, NULL) && r.kind == MSG_ACK) {

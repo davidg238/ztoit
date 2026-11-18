@@ -71,8 +71,8 @@ func main() {
 	}}))
 	fmt.Printf("ALG  %s\n", hex.EncodeToString(other))
 
-	// obs/apps/<name>: the installed image and whether it runs or was erased (run once).
-	for _, lc := range []string{"running", "erased"} {
+	// obs/apps/<name>: the installed image and whether it runs, was erased (run once), or a new one was refused.
+	for _, lc := range []string{"running", "erased", "refused"} {
 		obs := must(cval.Encode(cval.Record{Tag: "AppObs", Fields: cval.Map{
 			{K: cval.Symbol("image"), V: blobref},
 			{K: cval.Symbol("lifecycle"), V: cval.Symbol(lc)},

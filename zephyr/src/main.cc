@@ -198,6 +198,7 @@ static void refuse_staged(struct store_stage* stage, const char* why) {
   printf("ztoit: staged %s not installed: %s\n", stage->name, why);
   stage->state = STAGE_REFUSED;
   store_stage_save(stage);
+  store_app_unreport(stage->name);  // the agent pushes obs/apps/<name> #refused
 }
 
 // A verified staged image goes into the first free run after the firmware
