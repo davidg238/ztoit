@@ -1,12 +1,24 @@
 #!/bin/sh
-# Host test of the agent's codec (zcbor, canonical) against rete cval goldens.
+# Host tests of the agent's plain-C parts: the codec (zcbor, canonical) against
+# rete cval / porta wire goldens, and staging (hash, ed25519, progress).
 set -e
 d=$(dirname "$0")
 z=${ZCBOR:-$HOME/zephyr-esp32/modules/lib/zcbor}
-f="-std=c11 -fsanitize=address,undefined -DZCBOR_CANONICAL -I$z/include"
-# -Werror on our code only: zcbor's own sources carry warnings.
-cc $f -Wall -Wextra -Werror -c -o /tmp/ztoit-agent-msg.o "$d/../msg.c"
-cc $f -Wall -Wextra -Werror -c -o /tmp/ztoit-agent-msg-test.o "$d/msg_test.c"
-cc $f -o /tmp/ztoit-agent-msg-test /tmp/ztoit-agent-msg.o /tmp/ztoit-agent-msg-test.o \
+m=${MBEDTLS:-$HOME/zephyr-esp32/modules/crypto/mbedtls}
+o=/tmp/ztoit-agent-test
+mkdir -p $o
+f="-std=c11 -fsanitize=address,undefined -DZCBOR_CANONICAL -I$z/include -I$m/include"
+# -Werror on our code only: zcbor's, mbedTLS's and TweetNaCl's sources carry
+# warnings, and TweetNaCl left-shifts negative values (as every compiler means it).
+cc $f -Wall -Wextra -Werror -c -o $o/msg.o "$d/../msg.c"
+cc $f -Wall -Wextra -Werror -c -o $o/msg_test.o "$d/msg_test.c"
+cc $f -o $o/msg_test $o/msg.o $o/msg_test.o \
   "$z/src/zcbor_common.c" "$z/src/zcbor_encode.c" "$z/src/zcbor_decode.c"
-/tmp/ztoit-agent-msg-test
+cc $f -Wall -Wextra -Werror -c -o $o/stage.o "$d/../stage.c"
+cc $f -Wall -Wextra -Werror -c -o $o/stage_test.o "$d/stage_test.c"
+cc $f -fno-sanitize=shift -w -c -o $o/ed25519.o "$d/../ed25519.c"
+cc $f -w -c -o $o/sha256.o "$m/library/sha256.c"
+cc $f -w -c -o $o/platform_util.o "$m/library/platform_util.c"
+cc $f -o $o/stage_test $o/stage.o $o/stage_test.o $o/ed25519.o $o/sha256.o $o/platform_util.o
+$o/msg_test
+$o/stage_test
