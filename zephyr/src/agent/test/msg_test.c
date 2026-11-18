@@ -1,6 +1,8 @@
 // Host test for the agent's codec: its bytes must equal what rete's Go cval
 // encodes for the same records (goldens generated with protocol/cval, the
 // codec porta decodes with), and it must decode cval's replies.
+// The install goldens (GOLD_app*, GOLD_push_app) come from porta's own
+// encoders: test/gen/main.go, `go run .` there.
 // Run: sh zephyr/src/agent/test/run.sh
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +15,17 @@ static const char GOLD_push[] = "d81b82d8276470757368a4d8276269646c6134636631323
 static const char GOLD_batch[] = "d81b82d827656261746368a2d8276268690cd82763656e7482840b69676f616c2f6e616d65026562656e6368840c69676f616c2f6d6f646502d81b82d827644d6f6465a1d827646d6f6465d827626f6e";
 static const char GOLD_ack[] = "d81b82d8276361636ba1d82762687701";
 static const char GOLD_err[] = "d81b82d82763657272a1d827636d7367646e6f7065";
+
+// porta's appRecord (portacli/blobcmd.go): image {hash, size 600} and sig.
+static const char GOLD_app[] = "d81b82d82763417070a2d827637369675840d5e06ad84a21acbc1a10ea63faf4277b384d8157a38b4ffc3f1319db87011ceb3f08157402bc0288d1f8506a5b73fae4c2ad70097c085edd3cf8dd678e34bf01d82765696d616765d81b82d82767426c6f62526566a2d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276473697a65190258";
+// Every optional field of MANIFEST.cddl `app`, keep false, alg #sha256, no size.
+static const char GOLD_app_full[] = "d81b82d82763417070a7d827637369675840d5e06ad84a21acbc1a10ea63faf4277b384d8157a38b4ffc3f1319db87011ceb3f08157402bc0288d1f8506a5b73fae4c2ad70097c085edd3cf8dd678e34bf01d827646b656570f4d82765696d616765d81b82d82767426c6f62526566a2d82763616c67d82766736861323536d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276872756e6c6576656c03d82768747269676765727381d82764626f6f74d82769617267756d656e7473a1d827616e01d827696c6966656379636c65d8276772756e4c6f6f70";
+// alg #blake3: not a hash the agent checks.
+static const char GOLD_app_alg[] = "d81b82d82763417070a2d827637369675840d5e06ad84a21acbc1a10ea63faf4277b384d8157a38b4ffc3f1319db87011ceb3f08157402bc0288d1f8506a5b73fae4c2ad70097c085edd3cf8dd678e34bf01d82765696d616765d81b82d82767426c6f62526566a2d82763616c67d82766626c616b6533d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486";
+// wire.EncodePush of obs/apps/hello = AppObs{image: the same BlobRef}, seq 2.
+static const char GOLD_push_app[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186026e6f62732f617070732f68656c6c6f02d81b82d827664170704f6273a1d82765696d616765d81b82d82767426c6f62526566a2d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276473697a65190258071a00011170d827646d6f6e6f1a00011170";
+static const char HASH[] = "1783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486";
+static const char SIG[] = "d5e06ad84a21acbc1a10ea63faf4277b384d8157a38b4ffc3f1319db87011ceb3f08157402bc0288d1f8506a5b73fae4c2ad70097c085edd3cf8dd678e34bf01";
 
 static int failures = 0;
 
@@ -81,6 +94,25 @@ int main(void) {
   n = unhex(GOLD_err, in);
   msg_decode_reply(in, n, &r, NULL, NULL);
   check("err decodes", r.kind == MSG_ERR && r.text_len == 4 && !memcmp(r.text, "nope", 4));
+
+  uint8_t hash[32], sig[64];
+  unhex(HASH, hash);
+  unhex(SIG, sig);
+  n = msg_push_app(buf, sizeof buf, "a4cf12345678", 7, 70000, 2, "hello", hash, 600);
+  same("push(obs/apps/hello) encodes as wire.EncodePush", buf, n, GOLD_push_app);
+
+  struct msg_app a;
+  n = unhex(GOLD_app, in);
+  check("porta's App decodes", msg_decode_app(in, n, &a) && !memcmp(a.hash, hash, 32) && !memcmp(a.sig, sig, 64) &&
+                                   a.size == 600 && a.keep);
+  check("truncated App is refused", !msg_decode_app(in, n - 1, &a));
+  n = unhex(GOLD_app_full, in);
+  check("App with every field decodes, keep false", msg_decode_app(in, n, &a) && !memcmp(a.hash, hash, 32) &&
+                                                        a.size == -1 && !a.keep);
+  n = unhex(GOLD_app_alg, in);
+  check("App with alg #blake3 is refused", !msg_decode_app(in, n, &a));
+  n = unhex(GOLD_push_app, in);
+  check("a #push is not an App", !msg_decode_app(in, n, &a));
 
   printf(failures ? "FAILED %d\n" : "PASS\n", failures);
   return failures != 0;

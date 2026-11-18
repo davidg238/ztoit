@@ -3,6 +3,7 @@
 // gateway's #batch, #ack and #err replies. Plain C, host-tested (agent/test/).
 #pragma once
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -24,6 +25,24 @@ size_t msg_pull(uint8_t* buf, size_t cap, const char* id, int64_t cursor, int64_
 // A #push of one obs/build cell row: node seq `seq`, captured at `mono` of boot `bid`.
 size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono,
                       int64_t seq, const struct msg_build* b);
+
+// A #push of one obs/apps/<name> cell row, an AppObs whose image is the
+// installed blob (MANIFEST.cddl `app-obs`; only `image`, which is what lets
+// porta compare goal and obs).
+size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                    const char* name, const uint8_t hash[32], int64_t size);
+
+// A goal/apps/<name> value (MANIFEST.cddl `app`); pointers into the value.
+struct msg_app {
+  const uint8_t* sig;   // 64 B
+  const uint8_t* hash;  // 32 B: the image's SHA-256
+  int64_t size;         // -1: the BlobRef did not say
+  bool keep;            // absent: true
+};
+
+// False unless value is an App with a 64 B sig and a 32 B #sha256 image hash.
+// Fields the agent does not use (runlevel, triggers, arguments, lifecycle) are skipped.
+bool msg_decode_app(const uint8_t* value, size_t len, struct msg_app* out);
 
 enum msg_reply_kind { MSG_BAD = 0, MSG_BATCH, MSG_ACK, MSG_ERR };
 

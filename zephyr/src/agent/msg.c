@@ -1,5 +1,6 @@
 #include "msg.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include <zcbor_decode.h>
@@ -16,7 +17,7 @@
 #error "the agent's wire needs ZCBOR_CANONICAL (definite lengths)"
 #endif
 
-#define BACKUPS 8  // deepest nesting: push > ent > row > #Build > map
+#define BACKUPS 8  // deepest nesting: push > ent > row > #AppObs > map > #BlobRef > map
 
 static bool sym(zcbor_state_t* s, const char* name) {
   return zcbor_tag_put(s, 39) && zcbor_tstr_encode_ptr(s, name, strlen(name));
@@ -52,27 +53,54 @@ size_t msg_pull(uint8_t* buf, size_t cap, const char* id, int64_t cursor, int64_
   return done(ok, s, buf);
 }
 
+// A #push of one row, [nodeSeq, path, kind, value, bid, monoMs]: push_open
+// writes up to the value, the caller the value, push_close the rest.
+static bool push_open(zcbor_state_t* s, const char* id, int64_t bid, int64_t seq, const char* path) {
+  return record_start(s, "push", 4) &&
+         sym(s, "id") && str(s, id) &&
+         sym(s, "bid") && zcbor_int64_put(s, bid) &&
+         sym(s, "ent") && zcbor_list_start_encode(s, 1) &&
+           zcbor_list_start_encode(s, 6) &&
+             zcbor_int64_put(s, seq) && str(s, path) && zcbor_int64_put(s, 2);  // cell
+}
+
+static bool push_close(zcbor_state_t* s, int64_t bid, int64_t mono) {
+  return zcbor_int64_put(s, bid) && zcbor_int64_put(s, mono) &&
+           zcbor_list_end_encode(s, 6) &&
+         zcbor_list_end_encode(s, 1) &&
+         sym(s, "mono") && zcbor_int64_put(s, mono) &&
+         record_end(s, 4);
+}
+
 size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono,
                       int64_t seq, const struct msg_build* b) {
   ZCBOR_STATE_E(s, BACKUPS, buf, cap, 1);
-  bool ok = record_start(s, "push", 4) &&
-            sym(s, "id") && str(s, id) &&
-            sym(s, "bid") && zcbor_int64_put(s, bid) &&
-            sym(s, "ent") && zcbor_list_start_encode(s, 1) &&
-              // [nodeSeq, path, kind, value, bid, monoMs]
-              zcbor_list_start_encode(s, 6) &&
-                zcbor_int64_put(s, seq) && str(s, "obs/build") && zcbor_int64_put(s, 2) &&  // cell
-                record_start(s, "Build", 4) &&
-                  sym(s, "sdk") && str(s, b->sdk) &&
-                  sym(s, "chip") && sym(s, b->chip) &&
-                  sym(s, "board") && str(s, b->board) &&
-                  sym(s, "build") && str(s, b->build) &&
-                record_end(s, 4) &&
-                zcbor_int64_put(s, bid) && zcbor_int64_put(s, mono) &&
-              zcbor_list_end_encode(s, 6) &&
-            zcbor_list_end_encode(s, 1) &&
-            sym(s, "mono") && zcbor_int64_put(s, mono) &&
-            record_end(s, 4);
+  bool ok = push_open(s, id, bid, seq, "obs/build") &&
+            record_start(s, "Build", 4) &&
+              sym(s, "sdk") && str(s, b->sdk) &&
+              sym(s, "chip") && sym(s, b->chip) &&
+              sym(s, "board") && str(s, b->board) &&
+              sym(s, "build") && str(s, b->build) &&
+            record_end(s, 4) &&
+            push_close(s, bid, mono);
+  return done(ok, s, buf);
+}
+
+size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                    const char* name, const uint8_t hash[32], int64_t size) {
+  char path[64];
+  int n = snprintf(path, sizeof(path), "obs/apps/%s", name);
+  if (n < 0 || (size_t)n >= sizeof(path)) return 0;
+  ZCBOR_STATE_E(s, BACKUPS, buf, cap, 1);
+  bool ok = push_open(s, id, bid, seq, path) &&
+            record_start(s, "AppObs", 1) &&
+              sym(s, "image") &&
+              record_start(s, "BlobRef", 2) &&
+                sym(s, "hash") && zcbor_bstr_encode_ptr(s, (const char*)hash, 32) &&
+                sym(s, "size") && zcbor_int64_put(s, size) &&
+              record_end(s, 2) &&
+            record_end(s, 1) &&
+            push_close(s, bid, mono);
   return done(ok, s, buf);
 }
 
@@ -82,6 +110,64 @@ static bool is(const struct zcbor_string* z, const char* want) {
 
 static bool read_sym(zcbor_state_t* s, struct zcbor_string* out) {
   return zcbor_tag_expect(s, 39) && zcbor_tstr_decode(s, out);
+}
+
+// A record's head: tag 27, [Symbol name, then its map opened.
+static bool record_open(zcbor_state_t* s, const char* name) {
+  struct zcbor_string got;
+  return zcbor_tag_expect(s, 27) && zcbor_list_start_decode(s) && read_sym(s, &got) && is(&got, name) &&
+         zcbor_map_start_decode(s);
+}
+
+static bool record_close(zcbor_state_t* s) {
+  return zcbor_map_end_decode(s) && zcbor_list_end_decode(s);
+}
+
+// MANIFEST.cddl `blobref`: alg absent means #sha256 (RECORDS §2.3).
+static bool decode_blobref(zcbor_state_t* s, struct msg_app* out) {
+  if (!record_open(s, "BlobRef")) return false;
+  while (!zcbor_array_at_end(s)) {
+    struct zcbor_string key, text;
+    if (!read_sym(s, &key)) return false;
+    bool ok;
+    if (is(&key, "alg")) {
+      ok = read_sym(s, &text) && is(&text, "sha256");
+    } else if (is(&key, "hash")) {
+      ok = zcbor_bstr_decode(s, &text) && text.len == 32;
+      out->hash = text.value;
+    } else if (is(&key, "size")) {
+      ok = zcbor_int64_decode(s, &out->size) && out->size >= 0;
+    } else {
+      ok = zcbor_any_skip(s, NULL);
+    }
+    if (!ok) return false;
+  }
+  return out->hash && record_close(s);
+}
+
+bool msg_decode_app(const uint8_t* value, size_t len, struct msg_app* out) {
+  memset(out, 0, sizeof(*out));
+  out->size = -1;
+  out->keep = true;
+  ZCBOR_STATE_D(s, BACKUPS, value, len, 1, 0);
+  if (!record_open(s, "App")) return false;
+  while (!zcbor_array_at_end(s)) {
+    struct zcbor_string key, bytes;
+    if (!read_sym(s, &key)) return false;
+    bool ok;
+    if (is(&key, "sig")) {
+      ok = zcbor_bstr_decode(s, &bytes) && bytes.len == 64;
+      out->sig = bytes.value;
+    } else if (is(&key, "keep")) {
+      ok = zcbor_bool_decode(s, &out->keep);
+    } else if (is(&key, "image")) {
+      ok = decode_blobref(s, out);
+    } else {
+      ok = zcbor_any_skip(s, NULL);
+    }
+    if (!ok) return false;
+  }
+  return out->sig && out->hash && record_close(s) && s->payload == value + len;
 }
 
 // #batch's ent: rows [seq, path, kind, value].
