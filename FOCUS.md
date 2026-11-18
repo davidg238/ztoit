@@ -1,21 +1,23 @@
 # Focus
 
-- **Next session starts with (Opus):** branch `main`, focus **#31 agent install** (design step 4, §8 Install).
-  1. Bump the `west.yml` fork pin to `c01c01dc` (cc-rete's #30 change; left for us) and `tools/fork-sdk.sh`.
-  2. Read `zephyr/src/agent/` and the boot rule in `zephyr/src/main.cc` that erases runtime-installed containers.
-  3. Build the install slice on the WROOM-32 (ttyUSB0, WiFi; credentials are in its settings store, #30).
-     rete-29 wrote the agent (rete#521) and answers agent questions; the host side already writes `gw/apps/<name>`.
-- **Boards:** 47a4 (ttyUSB1) `build-m25-c6`, 2dbf `build-m25-nrf` (FATAL_DUMP), both fork `d6a1d7fe`, loggers
-  1728655 / 1730461 still running (`merge25-*-20261117.log`). WROOM-32 runs cc-rete's `build-w30`; its local
-  conf porta address was fixed to .176 after that build, so rebuild before testing the agent.
-  Battery nRF52840 on the J-Link: `wake_soak.toit`, `rtt_drain.py` PID 1405701.
+- **Next session starts with (Opus):** branch `main`, focus **#31 agent install** — finish the hardware proofs.
+  1. On the WROOM-32 (ttyUSB0): replace `hello31` with a new image of the same name; a keep=false run-once;
+     a bad signature (§9 test 4); a power cut mid-fetch (§9 test 3). Expected console lines: #31 trial comment.
+  2. Ask rete which push row shape is right: the gateway porta refuses obs/build and obs/apps
+     (`a push entry is not a 5-element list`), so the host tool's status cannot see an install yet.
+  3. README: WiFi/agent builds now need `prj_agent.conf` in `EXTRA_CONF_FILE`; `west.yml` fork pin once pushed.
+- **Boards:** WROOM-32 `build-i31` (WiFi + agent, `hello31` installed OTA), logger `i31-wroom-d-20261117.log`.
+  C6 47a4 `build-i31-c6-agent` (Thread + agent, `hello31` installed OTA), logger `i31-c6-20261117.log`.
+  Dongle 2dbf still `build-m25-nrf` on the old fork, logger 1730461. Battery nRF52840: `rtt_drain.py` 1405701.
+  Local confs (git-ignored) now carry `CONFIG_TOIT_AGENT_PUBKEY` and, for Thread, `CONFIG_TOIT_AGENT_PORTA`.
 - **Zephyr tree:** `~/zephyr-esp32/zephyr` carries `patches/zephyr-nrf-802154-hfclk-ready-deferred.patch`
   uncommitted; re-apply after any west update (`docs/design/zephyr-port.md` addendum 2026-11-17).
-- **Awaiting David:** push `main` (ahead of origin; held 2026-11-17 until #30 landed — it has, ask again) and
-  fork `wip-plan2-fix-a` (remote is the stale pre-rebase commit: needs a new name or his OK to overwrite).
-  #26 go to report upstream. Where the Zephyr patch lives long-term. XIAO nRF54L15 Sense.
-  Tell rete its C6 conf has the -60 dBm ED CCA (#18)? Remove worktrees `~/ztoit-wroom32`, `~/toit-wroom32`?
-- **Decided:** #25 closed: merge soak clean at 4.5 h (#25). WiFi credentials come from the settings store,
-  written by the host tool at first flash (#30). #23 fixed by the Zephyr patch; a dongle fatal is silent over
-  CDC, use `-DFATAL_DUMP=ON`. #18 RX fixed; TX = C6 ED CCA. Never halt a running nRF (#23).
-- **Open P2:** #31, #30, #23, #18, #8, #12, #4, #24. **P3:** #2, #3, #5, #9, #10, #13–#17, #20–#22, #26–#29.
+- **Awaiting David:** NOTHING IS PUSHED since `20a235e`: `main` and fork `wip-plan2-fix-a` (`7fb2838e`) wait
+  for the host tool's flash/run, to go out together (David 2026-11-17). Remote fork `wip-plan2-fix-a` is a
+  stale pre-rebase commit: new name or OK to overwrite. The live Thread network key is in public rete
+  (`nodus/nsl/docs/design/2026-07-11-rung7-openthread-l3-design.md:61`): rotate? #26, #33 upstream reports.
+  XIAO nRF54L15 Sense. Remove worktrees `~/ztoit-wroom32`, `~/toit-wroom32`?
+- **Decided:** install stages to `scratch_partition`, verifies, reboots, `main()` installs before the VM
+  (design addendum 2026-11-17). Uninstall waits for rete#519. `FlashRegistry::flush()` must really flush on
+  Espressif (#33). WiFi credentials come from the settings store (#30). Never halt a running nRF (#23).
+- **Open P2:** #31, #30, #23, #18, #8, #12, #4, #24. **P3:** #2, #3, #5, #9, #10, #13–#17, #20–#22, #26–#29, #32, #33.
