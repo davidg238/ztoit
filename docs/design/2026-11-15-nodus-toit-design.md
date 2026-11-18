@@ -270,8 +270,8 @@ Where the build differs from the addendum above, and why. Evidence is on #31.
 - **`main()` starts the agent** after the boot install, so the agent never touches the records while `main`
   changes them. A staged image that cannot be installed is marked refused, not a FATAL that loops every boot.
 - **The agent runs on Thread too.** Sockets take the build's family; the check-in is owed on each `thread_up`
-  (weak `ztoit_link_up()` in the fork); the agent's conf is `zephyr/prj_agent.conf`. The first check-in after
-  boot fails before the attach (#32).
+  (weak `ztoit_link_up()` in the fork); the agent's conf is `zephyr/prj_agent.conf`. `thread_up` only starts the
+  attach, so on Thread the agent waits for role child or better (at most `TIMEOUT_MS`) before checking in (#32).
 - **Run-once is the boot rule's, not a supervisor's.** `keep = false` is erased at the boot after it ran. The
   erase marks the record unreported, and the agent pushes `obs/apps/<name>` again with `lifecycle: #erased`
   (`#running` otherwise): `app-obs` takes any symbol there, and rete defines no erased value (David

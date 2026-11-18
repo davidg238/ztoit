@@ -27,6 +27,10 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/reboot.h>
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <openthread/thread.h>
+#include <zephyr/net/openthread.h>
+#endif
 
 #include "msg.h"
 #include "store.h"
@@ -464,10 +468,29 @@ static void owe_check_in(void) {
 }
 
 // Thread: the fork's thread_up, on each net.open that brings the link up.
-// The first after a boot can come before the attach; CoAP retransmits.
+// The first after a boot comes before the attach (thread_up only starts it):
+// the check-in waits for it in attached().
 void ztoit_link_up(void) {
   owe_check_in();
 }
+
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+// Thread: true once the node is a child or better, false after TIMEOUT_MS.
+// Without the wait the first check-in after each boot failed (-115) and the
+// goal waited a whole net.open cycle (#32).
+static bool attached(void) {
+  otInstance* instance = openthread_get_default_instance();
+  int64_t start = k_uptime_get();
+  while (true) {
+    openthread_mutex_lock();
+    otDeviceRole role = otThreadGetDeviceRole(instance);
+    openthread_mutex_unlock();
+    if (role >= OT_DEVICE_ROLE_CHILD) return true;
+    if (k_uptime_get() - start > TIMEOUT_MS) return false;
+    k_sleep(K_MSEC(100));
+  }
+}
+#endif
 
 #if !defined(CONFIG_NET_IPV6)
 // WiFi: the lease, which comes after wifi_up returns.
@@ -540,6 +563,9 @@ static void agent_main(void* a, void* b, void* c) {
          CONFIG_TOIT_AGENT_PORT);
   while (true) {
     k_sem_take(&addr_sem, K_FOREVER);
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+    if (!attached()) printk("agent: not attached after %d ms: checking in anyway\n", TIMEOUT_MS);
+#endif
     check_in();
     atomic_set(&owed, 0);
     k_sem_give(&settled_sem);
