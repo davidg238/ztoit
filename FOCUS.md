@@ -3,10 +3,9 @@
 - **Next session starts with (Opus):** branch `main`, focus **#31 agent install** — finish the hardware proofs.
   1. On the WROOM-32 (ttyUSB0): a keep=false run-once; a bad signature (§9 test 4); a power cut mid-fetch
      (§9 test 3). Expected console lines: #31 trial comment. Replace and pushes are proven (#31 19:18).
-  2. Reflash the WROOM-32 with `build-i31` (stamped SDK identity, #24) when it is plugged back in; then an
-     install there needs no `--force`, as shown on the C6 (#24 2026-11-17). Rerun `tools/fork-sdk.sh` after any fork commit.
+  2. Rerun `tools/fork-sdk.sh` after any fork commit, or the host tool refuses on the SDK identity (#24).
   3. README: WiFi/agent builds now need `prj_agent.conf` in `EXTRA_CONF_FILE`; `west.yml` fork pin once pushed.
-- **Boards:** WROOM-32 `build-i31` (WiFi + agent, `hello31` installed OTA), logger `i31-wroom-d-20261117.log`.
+- **Boards:** WROOM-32 (now ttyUSB2; use the by-id path) `build-i31` (WiFi + agent, `hello31` installed OTA), logger `i24-wroom-20261117.log`.
   C6 47a4 `build-i31-c6-agent` at `f5c2acb` (Thread + agent, `hello31` installed OTA), logger `i24-c6-20261117.log`.
   Dongle 2dbf still `build-m25-nrf` on the old fork, logger 1730461. Battery nRF52840: `rtt_drain.py` 1405701.
   Local confs (git-ignored) now carry `CONFIG_TOIT_AGENT_PUBKEY` and, for Thread, `CONFIG_TOIT_AGENT_PORTA`.
