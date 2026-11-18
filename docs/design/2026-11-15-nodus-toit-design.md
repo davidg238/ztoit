@@ -203,3 +203,55 @@ at the next report. Offline is k × `reportS`.
   6. power states;
   7. the §9 tests;
   8. faber.
+
+## Addendum 2026-11-17: install, first slice (#31)
+
+**Rule.** The agent fetches an image into a staging partition while the VM runs, verifies it there, and
+reboots; `main()` installs the staged image into the registry before the VM starts, the way it installs a
+firmware image. The registry is written only when no VM is running.
+
+**Why not §8's "fetch into a fresh registry allocation".** The registry's allocator is the Toit system
+process (`system/flash/registry.toit` keeps the free list it scanned at start). A C thread that writes a hole
+while the VM runs can be handed the same hole by a Toit allocation (a `storage.Region`, a container install).
+Doing it soundly needs either the supervisor to allocate (step later, not built) or the link brought up in C
+before the VM. Staging needs neither. Cost: each image is written twice, one reboot per install, and an image
+is limited to the staging partition. When the supervisor exists it can install from staging without the
+reboot; staging stays as the place an image is verified before the registry sees it.
+
+**Flow.**
+
+1. *Check-in.* A `goal/apps/<name>` row whose `image.hash` differs from the installed record becomes the
+   pending install (one at a time; a newer goal replaces it and restarts the fetch).
+2. *Fetch.* `GET /blob/<hash>` by Block2 into the staging partition, continued across check-ins. Progress is
+   the count of staged bytes, recovered after a reboot by scanning for the first erased block, so a power cut
+   resumes by block number (§9 test 3). The staging partition is erased when a fetch starts.
+3. *Verify.* SHA-256 over the staged bytes must equal `image.hash`, and `sig` must be an ed25519 signature of
+   those 32 bytes under porta's public key. A failure erases staging, is printed, and is not retried for the
+   same hash (§9 test 4). The key is `CONFIG_TOIT_AGENT_PUBKEY` (hex, deployment-specific, local conf); with
+   no key nothing installs.
+4. *Commit to staging.* The record `{name, hash, size, keep, state = verified}` is saved in settings, then
+   the agent reboots after the check-in ends.
+5. *Boot.* `main()`: firmware images first (rule below); then a `verified` record is installed with
+   `install_image` from the staging partition into the first free run after the firmware images, replacing an
+   allocation of the same name. The record becomes `installed {offset}` only after the header commit; a power
+   cut before that repeats the install from staging.
+6. *Run.* The stock container manager starts it at that boot (`FLAG-RUN-BOOT`). `keep = false`: the record is
+   marked `ran` at that boot and the allocation is erased at the following one.
+7. *Report.* The agent pushes `obs/apps/<name>` with the installed `image` at its next check-in.
+
+**Boot rule (replaces Plan 1's).** The firmware's images sit back to back at the front of the registry. If
+they are exactly there, everything after them is kept. If not, the whole registry and the agent's installed
+records are erased and the firmware images reinstalled: installed apps come back from porta's goals, which
+are the record of what should be on the node.
+
+**Assumptions and limits, written down.**
+
+- Staging is the board's existing `scratch_partition` (ESP32 default table: 124 KB at 0x3E0000, unused
+  without MCUboot swap). No new partition until an image does not fit. Boards without one get no install yet.
+- Something must open the network for the agent to check in (§7 piggyback): until the supervisor reports on
+  its own, an install-capable firmware carries a boot container that opens the network periodically.
+- An install kills whatever is running (the reboot). The supervisor will choose the moment later.
+- Uninstall on a removed goal uses the same erase-at-boot path; it is in the slice only if the row shape for
+  a removed goal is settled on the porta side.
+- ed25519: mbedTLS in the tree has no EdDSA. Verify-only code is vendored (public domain), not written here.
+- WROOM-32 over WiFi first. Thread boards follow when the agent's check-in runs over IPv6.
