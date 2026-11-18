@@ -334,6 +334,8 @@ static void fetch(void) {
   if (!fetch_offset_known) {
     fetch_offset = stage_progress(staging);
     fetch_offset_known = true;
+    printk("agent: %s %s: staged %u B, fetching from there\n", stage.name, hex8(stage.hash),
+           (unsigned)fetch_offset);
   }
   char path[sizeof("blob/") + 2 * STAGE_HASH_SIZE];
   strcpy(path, "blob/");
