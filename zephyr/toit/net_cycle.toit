@@ -24,7 +24,14 @@ echo network/net.Client -> int?:
 main:
   while true:
     start := Time.monotonic-us
-    network := net.open
+    network/net.Client? := null
+    // A failed open (WiFi connect timeout, Thread attach) is retried next cycle:
+    // this container is what opens the link for the agent's check-ins (#35).
+    open-error := catch: network = net.open
+    if not network:
+      print "net_cycle: open failed after $((Time.monotonic-us - start) / 1_000) ms: $open-error"
+      sleep --ms=CYCLE-MS
+      continue
     print "net_cycle: open $((Time.monotonic-us - start) / 1_000) ms"
     try:
       ms/int? := null
