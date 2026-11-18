@@ -1,0 +1,45 @@
+/* ArduCAM WROOM-32 (#37): camera on SPI3 (MISO 19, MOSI 23, SCK 18), CS GPIO 22.
+ * SPI3's hardware CS is GPIO 5, the SD card's CS on this board: left out of the
+ * pinctrl and held high, so the SD card stays off the bus. */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <dt-bindings/pinctrl/esp32-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,camera = &arducam_mega;
+	};
+};
+
+&pinctrl {
+	spim3_cam: spim3_cam {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO19>,
+				 <SPIM3_SCLK_GPIO18>;
+		};
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO23>;
+			output-low;
+		};
+	};
+};
+
+&gpio0 {
+	sd_cs_off {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spim3_cam>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+	arducam_mega: arducam-mega@0 {
+		compatible = "arducam,mega";
+		reg = <0>;
+		spi-max-frequency = <100000>;  /* the Toit library ran at 100 kHz; raise once captures work */
+	};
+};
