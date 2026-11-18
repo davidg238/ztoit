@@ -389,14 +389,15 @@ static void push_obs_app(void) {
   if (report.seq == 0) report.seq = ++node_seq;
   struct msg_reply r;
   int64_t mono = k_uptime_get();
+  const char* lifecycle = report.app.state == APP_ERASED ? "erased" : "running";
   size_t len = msg_push_app(request, sizeof(request), id, bid, mono, report.seq, report.name, report.app.hash,
-                            report.app.size);
+                            report.app.size, lifecycle);
   if (len && exchange(sock, (struct sockaddr*)&porta, len, &r, NULL) && r.kind == MSG_ACK) {
     hw = r.hw;
     if (hw >= report.seq) {
       report.app.reported = 1;
       store_app_save(report.name, &report.app);
-      printk("agent: obs/apps/%s pushed: %s\n", report.name, hex8(report.app.hash));
+      printk("agent: obs/apps/%s pushed: %s #%s\n", report.name, hex8(report.app.hash), lifecycle);
       memset(&report, 0, sizeof(report));
     }
   }

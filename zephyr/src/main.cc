@@ -235,6 +235,7 @@ static void run_once(const char* name, struct store_app* app, void* ctx) {
   if (app->state == APP_RAN) {
     erase_app(*app);
     app->state = APP_ERASED;
+    app->reported = 0;  // the agent pushes obs/apps/<name> #erased
     store_app_save(name, app);
     printf("ztoit: %s ran once (keep false): erased\n", name);
   } else if (app->state == APP_INSTALLED && !app->keep) {

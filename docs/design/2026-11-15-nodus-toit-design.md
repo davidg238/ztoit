@@ -272,8 +272,10 @@ Where the build differs from the addendum above, and why. Evidence is on #31.
 - **The agent runs on Thread too.** Sockets take the build's family; the check-in is owed on each `thread_up`
   (weak `ztoit_link_up()` in the fork); the agent's conf is `zephyr/prj_agent.conf`. The first check-in after
   boot fails before the attach (#32).
-- **Run-once is the boot rule's, not a supervisor's.** `keep = false` is erased at the boot after it ran, and
-  nothing is pushed after the erase, so `obs/apps/<name>` still shows the image. Open on #31.
+- **Run-once is the boot rule's, not a supervisor's.** `keep = false` is erased at the boot after it ran. The
+  erase marks the record unreported, and the agent pushes `obs/apps/<name>` again with `lifecycle: #erased`
+  (`#running` otherwise): `app-obs` takes any symbol there, and rete defines no erased value (David
+  2026-11-18, #31).
 - **SDK identity (§6, #24).** Node and host tool report `tools/sdk-id.sh`'s string, `<stock version>+zephyr.<fork
   commit>`; `tools/fork-sdk.sh` stamps it into `$TOIT_HOST version`, the firmware stamps it at build time
   (`zephyr/ztoit_ids.cmake`). A fork commit without a rerun of `fork-sdk.sh` is a mismatch by design.

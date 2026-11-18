@@ -87,19 +87,20 @@ size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int
 }
 
 size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
-                    const char* name, const uint8_t hash[32], int64_t size) {
+                    const char* name, const uint8_t hash[32], int64_t size, const char* lifecycle) {
   char path[64];
   int n = snprintf(path, sizeof(path), "obs/apps/%s", name);
   if (n < 0 || (size_t)n >= sizeof(path)) return 0;
   ZCBOR_STATE_E(s, BACKUPS, buf, cap, 1);
   bool ok = push_open(s, id, bid, seq, path) &&
-            record_start(s, "AppObs", 1) &&
+            record_start(s, "AppObs", 2) &&
               sym(s, "image") &&
               record_start(s, "BlobRef", 2) &&
                 sym(s, "hash") && zcbor_bstr_encode_ptr(s, (const char*)hash, 32) &&
                 sym(s, "size") && zcbor_int64_put(s, size) &&
               record_end(s, 2) &&
-            record_end(s, 1) &&
+              sym(s, "lifecycle") && sym(s, lifecycle) &&
+            record_end(s, 2) &&
             push_close(s, bid, mono);
   return done(ok, s, buf);
 }

@@ -27,10 +27,10 @@ size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int
                       int64_t seq, const struct msg_build* b);
 
 // A #push of one obs/apps/<name> cell row, an AppObs whose image is the
-// installed blob (MANIFEST.cddl `app-obs`; only `image`, which is what lets
-// porta compare goal and obs).
+// installed blob and its lifecycle, "running" or "erased" (a run-once image after
+// its erase) (MANIFEST.cddl `app-obs`; `image` is what lets porta compare goal and obs).
 size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
-                    const char* name, const uint8_t hash[32], int64_t size);
+                    const char* name, const uint8_t hash[32], int64_t size, const char* lifecycle);
 
 // A goal/apps/<name> value (MANIFEST.cddl `app`); pointers into the value.
 struct msg_app {

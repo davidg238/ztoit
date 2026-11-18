@@ -71,12 +71,16 @@ func main() {
 	}}))
 	fmt.Printf("ALG  %s\n", hex.EncodeToString(other))
 
-	obs := must(cval.Encode(cval.Record{Tag: "AppObs", Fields: cval.Map{
-		{K: cval.Symbol("image"), V: blobref},
-	}}))
-	push := must(wire.EncodePush("a4cf12345678", 7, 70000, []space.Entry{
-		{Seq: 2, Path: "obs/apps/hello", Kind: cval.KindCell, Value: obs, BootID: 7, MonoMs: 70000},
-	}))
-	fmt.Printf("PUSH %s\n", hex.EncodeToString(push))
+	// obs/apps/<name>: the installed image and whether it runs or was erased (run once).
+	for _, lc := range []string{"running", "erased"} {
+		obs := must(cval.Encode(cval.Record{Tag: "AppObs", Fields: cval.Map{
+			{K: cval.Symbol("image"), V: blobref},
+			{K: cval.Symbol("lifecycle"), V: cval.Symbol(lc)},
+		}}))
+		push := must(wire.EncodePush("a4cf12345678", 7, 70000, []space.Entry{
+			{Seq: 2, Path: "obs/apps/hello", Kind: cval.KindCell, Value: obs, BootID: 7, MonoMs: 70000},
+		}))
+		fmt.Printf("PUSH %s %s\n", lc, hex.EncodeToString(push))
+	}
 	fmt.Printf("BLOB %s\n", hex.EncodeToString(blob))
 }
