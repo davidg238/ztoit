@@ -133,6 +133,7 @@ Implements "peripherals come from Zephyr" above.
 - **Mbed TLS 4 on 4.5.** The VM core's legacy crypto is private there. `modules/toit/mbedtls4/` forwards the old
   header names to `mbedtls/private/`, and `zephyr/CMakeLists.txt` picks `crypto_mbedtls{3,4}.conf` from
   `$ZEPHYR_BASE/VERSION`. Bignum comes in through ECC, because TF-PSA's `rsa.c` fails `-Werror` with only the RSA
-  public key. Cost: a crypto primitive beyond SHA, AES, GCM, ChaCha-Poly and P-256 is untested on 4.5.
+  public key. The VM links only bignum, SHA-256/512 and entropy: the `crypto` primitives are compiled out on
+  Zephyr (no `CONFIG_TOIT_CRYPTO`), on 4.2 as on 4.5.
 - **Fork `3e1418df`:** a primitive argument renamed (`_raw_current` is a 4.5 kernel macro), and plain `fwrite` on
   Zephyr (4.5 defines `_POSIX_THREAD_SAFE_FUNCTIONS`, but picolibc has no `*_unlocked`).
