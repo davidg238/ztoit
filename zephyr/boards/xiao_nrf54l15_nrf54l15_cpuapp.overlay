@@ -1,0 +1,16 @@
+/* XIAO nRF54L15 (Zephyr 4.5), no MCUboot: the app is linked at 0x0 and may use
+ * the unused mcuboot area and slot0, up to 0xc2000 (CONFIG_FLASH_LOAD_SIZE in the
+ * board .conf turns overflow into a link error). Toit's flash registry takes the
+ * MCUboot upgrade slot, same address and size; the storage partition after it
+ * is left alone for settings. */
+/delete-node/ &slot1_partition;
+
+&cpuapp_rram {
+	partitions {
+		toit_partition: partition@c2000 {
+			compatible = "zephyr,mapped-partition";
+			label = "toit";
+			reg = <0x000c2000 DT_SIZE_K(712)>;
+		};
+	};
+};
