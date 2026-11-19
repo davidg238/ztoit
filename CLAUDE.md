@@ -10,5 +10,5 @@ Spike: run the Toit VM core (from `~/workspaceToit/toit-v2.0.0`) under Zephyr on
 - Agent builds add `prj_agent.conf` and need the git-ignored local conf's `CONFIG_TOIT_AGENT_PORTA`/`_PUBKEY` (#31).
 - Rerun `tools/fork-sdk.sh` after any fork commit: node and host tool must report the same `tools/sdk-id.sh` string (#24).
 - Name serial ports by `/dev/serial/by-id/…`: the ttyUSB numbers move when a board is replugged. Exception: the two EzSBC WROOM-32s share USB serial `015E0000`, so by-id points at whichever enumerated last; use `/dev/serial/by-path/…` for them.
-- Two Zephyr trees: `~/zephyr-esp32` (4.2, SDK 0.17.4) for the existing boards, `~/zephyr-4.5` (SDK 1.0.1, own `.venv`) for the nRF54L15. Always set `ZEPHYR_BASE` (and `ZEPHYR_SDK_INSTALL_DIR` for 4.5); unset, CMake picks the NCS Zephyr (#42).
+- Two Zephyr trees: `~/zephyr-esp32` (4.2, SDK 0.17.4, west in its `.venv`) for the existing boards, `~/zephyr-4.5` (SDK 1.0.1, own `.venv`) for the nRF54L15. Always set `ZEPHYR_BASE` (and `ZEPHYR_SDK_INSTALL_DIR` for 4.5); unset, CMake picks the NCS Zephyr (#42).
 - A rebuild of the Toit images gives them new ids, and the boot rule then erases installed apps on the next flash (porta's goals reinstall them). To keep them, reuse the old build's `toit/*.image`.
