@@ -1,0 +1,6 @@
+Zephyr 4.5 ships Mbed TLS 4 with TF-PSA-Crypto, where the legacy crypto APIs
+the Toit VM core calls (bignum, SHA, AES, GCM, ChaCha-Poly, ECDSA, entropy)
+are private: declared only with MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS, in
+mbedtls/private/*.h. These headers forward the old names there, so the VM
+sources build unchanged on both Zephyr 4.2 and 4.5. Used only when
+CONFIG_MBEDTLS_VERSION_4_x (CMakeLists.txt); the conf is zephyr/crypto_mbedtls4.conf.

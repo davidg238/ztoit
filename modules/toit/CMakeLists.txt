@@ -27,6 +27,9 @@ if(CONFIG_TOIT)
     $ENV{TOIT_SRC}/third_party/dragonbox/include)
   zephyr_library_compile_definitions(TOIT_DEPLOY _DEFAULT_SOURCE)
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+  if(CONFIG_MBEDTLS_VERSION_4_x)  # legacy headers moved to private/ (mbedtls4/README)
+    zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mbedtls4)  # the app includes VM headers too
+  endif()
   zephyr_library_compile_options(-fno-exceptions -fno-rtti -Wno-unused -Wno-sign-compare)
   set_source_files_properties(${T}/interpreter_core.cc ${T}/interpreter_run.cc
     PROPERTIES COMPILE_OPTIONS "-O3")

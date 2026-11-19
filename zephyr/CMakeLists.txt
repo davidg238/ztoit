@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.20.0)
 list(APPEND ZEPHYR_EXTRA_MODULES ${CMAKE_CURRENT_SOURCE_DIR}/../modules/toit)
+# The VM core's crypto conf depends on the Mbed TLS major version, which follows
+# the Zephyr release: 4.2 ships Mbed TLS 3, 4.5 ships Mbed TLS 4.
+file(STRINGS $ENV{ZEPHYR_BASE}/VERSION zv REGEX "^VERSION_(MAJOR|MINOR) = ")
+string(REGEX REPLACE "VERSION_MAJOR = ([0-9]+);VERSION_MINOR = ([0-9]+)" "\\1.\\2" zv "${zv}")
+if(zv VERSION_GREATER_EQUAL 4.5)
+  list(APPEND EXTRA_CONF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/crypto_mbedtls4.conf)
+else()
+  list(APPEND EXTRA_CONF_FILE ${CMAKE_CURRENT_SOURCE_DIR}/crypto_mbedtls3.conf)
+endif()
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ztoit LANGUAGES C CXX)
 target_sources(app PRIVATE src/main.cc)

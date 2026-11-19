@@ -12,7 +12,7 @@ manifest:
         name-allowlist: [hal_espressif, hal_nordic, cmsis, cmsis_6, mbedtls, openthread]
     - name: toit
       remote: davidg238
-      revision: 7fb2838e7dec4c8a858edbe27607ae939065fead  # zephyr-port
+      revision: 3e1418dff959683283c0646a2eed9cf382c9864b  # zephyr-port
       path: toit
   self:
     path: ztoit
