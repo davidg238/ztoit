@@ -119,3 +119,11 @@ Implements "peripherals come from Zephyr" above.
   `cache_hal_invalidate_addr()` over the mapping on the other Espressif SoCs; 0 of 32 stale after.
 - **Invalidates** the earlier comment in `flash_registry_zephyr.cc` that Espressif's write keeps the mapped view
   coherent. Earlier installs passed because the pages had not been read before they were written.
+
+## Addendum 2026-11-19: a second Zephyr, v4.5.0, for the nRF54L15 (#41)
+
+- **Decision (David, 2026-11-19): upgrade, not backport.** v4.5.0 defines `xiao_nrf54l15`. It lives in its own
+  west workspace, `~/zephyr-4.5`, with SDK 1.0.1 (its `SDK_VERSION`) and its own venv. SDK 1.0.1 is not
+  registered with CMake (`setup.sh` without `-c`), so 4.2 builds keep SDK 0.17.4.
+- **`~/zephyr-esp32` (4.2 plus the #23 patch) stays** for the C6, WROOM-32 and dongle until each is re-proven on 4.5.
+- Every build sets `ZEPHYR_BASE` explicitly: unset, CMake resolves to the NCS Zephyr (#42).
