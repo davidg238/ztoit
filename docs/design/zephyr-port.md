@@ -10,7 +10,7 @@ Code: toit `zephyr-port` branch (`src/*_zephyr.cc`); ztoit `modules/toit/` (Zeph
 - **Toit heap pages** come from one static `sys_heap` arena (`CONFIG_TOIT_HEAP_SIZE`), so
   `OS::get_heap_memory_range` is exact. Its 160 KB default is a guess awaiting data.
 - **Time.** Monotonic = `k_uptime_ticks`; real time = `sys_clock_gettime/settime`. No POSIX layer.
-- **mbedtls** is Zephyr's module (3.6.4); `CONFIG_MBEDTLS_RSA_C` is enabled only to get `BIGNUM_C`.
+- **mbedtls** is Zephyr's module: 3.6.4 on 4.2, where `CONFIG_MBEDTLS_RSA_C` is enabled only to get `BIGNUM_C`; 4.x on 4.5 (addendum 2026-11-19).
 - **Boot.** A bare app cannot be the boot program: `print`'s service discovery is an RPC to the system process.
   `zephyr/toit/boot.toit` is a minimal system (toit's `SystemServiceManager` in-process, trace printing) that
   calls the app's `main`. The full `system/` + flash registry + bundled containers is the later path.
@@ -127,3 +127,12 @@ Implements "peripherals come from Zephyr" above.
   registered with CMake (`setup.sh` without `-c`), so 4.2 builds keep SDK 0.17.4.
 - **`~/zephyr-esp32` (4.2 plus the #23 patch) stays** for the C6, WROOM-32 and dongle until each is re-proven on 4.5.
 - Every build sets `ZEPHYR_BASE` explicitly: unset, CMake resolves to the NCS Zephyr (#42).
+- **The XIAO nRF54L15 boots on 4.5** (ktau rung 2, 2026-11-19). The app links at 0x0 up to 0xc2000
+  (`CONFIG_FLASH_LOAD_SIZE`), `toit_partition` takes the unused MCUboot slot1 (0xc2000, 712 KB, RRAM; installs
+  survive a reset), and the heap is 80 KB. Static RAM is 114120 of 262048 B.
+- **Mbed TLS 4 on 4.5.** The VM core's legacy crypto is private there. `modules/toit/mbedtls4/` forwards the old
+  header names to `mbedtls/private/`, and `zephyr/CMakeLists.txt` picks `crypto_mbedtls{3,4}.conf` from
+  `$ZEPHYR_BASE/VERSION`. Bignum comes in through ECC, because TF-PSA's `rsa.c` fails `-Werror` with only the RSA
+  public key. Cost: a crypto primitive beyond SHA, AES, GCM, ChaCha-Poly and P-256 is untested on 4.5.
+- **Fork `3e1418df`:** a primitive argument renamed (`_raw_current` is a 4.5 kernel macro), and plain `fwrite` on
+  Zephyr (4.5 defines `_POSIX_THREAD_SAFE_FUNCTIONS`, but picolibc has no `*_unlocked`).
