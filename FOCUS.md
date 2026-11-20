@@ -3,7 +3,10 @@
 - **Next session starts with (Opus):** branch `main`, #41 (ktau rung 5: LC3 encode primitive; clip size and encode
   time measured). Rung 4 is done (ktau `docs/journal/04-pdm-microphone.md`). First: write rung 5's plan with
   superpowers:writing-plans from the ktau design; find Zephyr 4.5's `liblc3` module and a sample that uses it,
-  and run that as the first check. Fallback: #37 after the resolder.
+  and run that as the first check (liblc3: `~/zephyr-4.5/modules/lib/liblc3`, no standalone sample; ktau is
+  `~/workspaceToit/ktau`). At the bench: same short phrase ×5 into the Parrot headset and the XIAO at shirt
+  distance, then faster-whisper medium.en on all (headset clip: −0.27 logprob; XIAO 1.5 s: −0.83, not comparable).
+  Fallback: #37 after the resolder.
 - **Boards:** XIAO nRF54L15 console `…XIAO_nrf54_CMSIS-DAP_E96922FA-if02`, runs the rung 4 overrun break-check
   (reflash `rung4.toit` from `~/zephyr-4.5/build-rung4` for the demo); logger 2649520, log
   `ktau-rung2-xiao-20261119.log`. Camera WROOM-32 (by-path `…usb-0:1.3:1.0-port0`) runs Jaguar at 192.168.0.244.
