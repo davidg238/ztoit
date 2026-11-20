@@ -27,6 +27,9 @@
 / {
 	imu_keys {
 		compatible = "gpio-keys";
+		/* The IMU pulses INT1 for a few ms per tap; the 30 ms default
+		 * debounce swallows every pulse (ktau journal 03). */
+		debounce-interval-ms = <1>;
 
 		imu_int1: imu-int1 {
 			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
