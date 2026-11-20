@@ -13,6 +13,7 @@ if(CONFIG_TOIT)
   list(APPEND toit_core ${T}/event_sources/timer.cc ${T}/resources/timer.cc
     ${T}/event_sources/zsock_zephyr.cc ${T}/resources/udp_zephyr.cc ${T}/resources/tcp_zephyr.cc
     ${T}/event_sources/zephyr_keys.cc ${T}/resources/zephyr.cc
+    ${T}/event_sources/ble_udp_zephyr.cc ${T}/resources/udp_ble.cc
     ${T}/resources/image.cc)
   set(toit_gc
     ${T}/third_party/dartino/object_memory.cc
