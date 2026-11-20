@@ -137,3 +137,14 @@ Implements "peripherals come from Zephyr" above.
   Zephyr (no `CONFIG_TOIT_CRYPTO`), on 4.2 as on 4.5.
 - **Fork `3e1418df`:** a primitive argument renamed (`_raw_current` is a 4.5 kernel macro), and plain `fwrite` on
   Zephyr (4.5 defines `_POSIX_THREAD_SAFE_FUNCTIONS`, but picolibc has no `*_unlocked`).
+
+## Addendum 2026-11-19: I2C from Toit, and sensor interrupts as keys (#41)
+
+- **I2C is one generic primitive,** `zephyr.i2c_transfer` (write, read, or write-then-read with a repeated start,
+  on a bus found by node label), appended last in `MODULE_ZEPHYR`. Toit's `zephyr.I2c` devices implement
+  `serial.Device`, so chip drivers are Toit over `serial.Registers`, not per-chip C (fork `a0e984e1`).
+- **A sensor's interrupt pin is a `gpio-keys` child** in the board overlay, waited on with `zephyr.Key`: no new C.
+  Set `debounce-interval-ms` to the pulse: the LSM6DS3TR-C's tap pulse is a few ms, and the 30 ms default
+  swallowed it (ktau journal 03).
+- **Device primitives check the driver class** (`DEVICE_API_IS`, from a helper outside `namespace toit`), so a
+  label of another class throws `WRONG_OBJECT_TYPE` instead of calling a foreign API table (fork `a035bb0e`).
