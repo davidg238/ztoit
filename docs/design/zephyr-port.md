@@ -148,3 +148,16 @@ Implements "peripherals come from Zephyr" above.
   swallowed it (ktau journal 03).
 - **Device primitives check the driver class** (`DEVICE_API_IS`, from a helper outside `namespace toit`), so a
   label of another class throws `WRONG_OBJECT_TYPE` instead of calling a foreign API table (fork `a035bb0e`).
+
+## Addendum 2026-11-19: the microphone (#41)
+
+- **One generic `dmic` primitive group,** `mic_start`/`mic_read`/`mic_stop`, on any device found by node label;
+  `zephyr.Microphone` in Toit. Format fixed in C at 16 kHz, 16-bit, mono, 100 ms blocks from a static 4-block slab;
+  the gain (`--gain-db`, ±20) comes from Toit (fork `45549fe5`).
+- **`mic_read` never waits;** Toit polls every 10 ms while recording. The tap wait stays event-driven. An
+  event-driven read waits for rung 8's power numbers.
+- **The nRF driver stops itself silently when Toit falls behind,** so `read` throws `MICROPHONE_STOPPED` after 1 s
+  without a block. **`start` takes the microphone over:** it stops and frees whatever an earlier owner left
+  (fork `a4eb6395`; slack follow-up #45).
+- New primitives also need an entry in `src/compiler/propagation/type_primitive_zephyr.cc`, or `toit.compile`
+  fails to link.
