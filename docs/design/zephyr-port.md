@@ -171,3 +171,9 @@ Implements "peripherals come from Zephyr" above.
 - **The board asks for a 7.5–15 ms connection interval, always.** Zephyr's receive path grants one credit at a time,
   so at 50 ms the relay delivers ~4 datagrams/s of 400 B. It costs power; nodes are on USB. On-demand is #46.
 - Measurements: ktau `docs/journal/06-udp-over-ble.md`.
+
+## Addendum 2026-11-21: one Zephyr tree, 4.5 (#47)
+
+- ztoit stays current on 4.5 only (David, 2026-11-21): nobody else depends on 4.2, and two trees cost two SDKs
+  and the `ZEPHYR_BASE` trap (#42). This supersedes "4.2 stays" in the 2026-11-19 addendum once #47 re-proves the
+  C6, WROOM-32 and dongle on 4.5. ktau (#41) ended at rung 7; its posts tell the 4.2 → 4.5 story.
