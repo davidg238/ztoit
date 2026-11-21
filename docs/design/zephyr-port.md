@@ -161,3 +161,13 @@ Implements "peripherals come from Zephyr" above.
   (fork `a4eb6395`; slack follow-up #45).
 - New primitives also need an entry in `src/compiler/propagation/type_primitive_zephyr.cc`, or `toit.compile`
   fails to link.
+
+## Addendum 2026-11-21: UDP over Bluetooth LE to a relay (#41)
+
+- **`udp_ble.cc` beside `udp_zephyr.cc`; a build picks one** (`prj_ble.conf`). The transport is rete's `udp_ble.c`
+  ported (one bonded phone, one L2CAP channel, a ring per socket); `net.open` returns it. A send while the channel
+  is down is dropped, as UDP over a down link (fork `1b737ec2`, `b3964baa`).
+- **The bond is in ZMS settings** on the nRF54L's RRAM; without a backend Zephyr keeps it in RAM only.
+- **The board asks for a 7.5–15 ms connection interval, always.** Zephyr's receive path grants one credit at a time,
+  so at 50 ms the relay delivers ~4 datagrams/s of 400 B. It costs power; nodes are on USB. On-demand is #46.
+- Measurements: ktau `docs/journal/06-udp-over-ble.md`.
