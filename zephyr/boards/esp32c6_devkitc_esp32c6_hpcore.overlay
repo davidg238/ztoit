@@ -6,6 +6,14 @@
 			label = "toit";
 			reg = <0x400000 DT_SIZE_M(4)>;
 		};
+
+		/* The agent's staging area (zephyr/src/agent/store.c): where Zephyr's
+		 * ESP32 tables had scratch_partition until 4.5 dropped it (#47). */
+		stage_partition: partition@3e0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "stage";
+			reg = <0x3e0000 DT_SIZE_K(124)>;
+		};
 	};
 };
 

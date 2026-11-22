@@ -1,8 +1,31 @@
 config TOIT
 	bool "Toit VM core"
 	depends on CPP
+	select PSA_CRYPTO
+	select MBEDTLS
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_SHA_512
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
 	help
 	  Compile the Toit VM core from $TOIT_SRC (see ztoit's env.sh).
+	  The PSA_WANT selects pick the Mbed TLS 4 legacy modules the VM links
+	  (bignum, SHA-256/512, entropy; ECDSA and P-256 are the only route to
+	  bignum). They are selects, not conf lines, because OpenThread's default
+	  security config makes those symbols promptless, and a conf line is then
+	  ignored (ztoit #47).
+
+config ZVFS_EVENTFD_ADD_SIZE_TOIT
+	int "eventfds the VM's socket event source needs"
+	default 1
+	depends on TOIT && ZVFS_EVENTFD
+	help
+	  The zsock event source wakes its poll loop with one eventfd. Zephyr
+	  sums the ZVFS_EVENTFD_ADD_SIZE_* symbols into ZVFS_EVENTFD_MAX; from
+	  4.5 the CoAP client (the agent) claims one too, so without this the
+	  source finds none and aborts at boot (ztoit #47).
 
 config TOIT_HEAP_SIZE
 	int "Bytes in the static arena Toit heap pages come from"
@@ -31,7 +54,7 @@ config TOIT_AGENT
 	select ZCBOR
 	select ZCBOR_CANONICAL
 	select MBEDTLS
-	select MBEDTLS_SHA256
+	select PSA_WANT_ALG_SHA_256
 	select REBOOT
 	help
 	  On each net.open that brings the link up (WiFi: the IPv4 lease;

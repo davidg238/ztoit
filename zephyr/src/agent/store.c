@@ -18,10 +18,11 @@ bool store_init(void) {
 
 // --- Staging partition ---------------------------------------------------------
 
-#if FIXED_PARTITION_EXISTS(scratch_partition)
+#if FIXED_PARTITION_EXISTS(stage_partition)
 
-// The board's scratch_partition (ESP32 default table: unused without MCUboot
-// swap). Not memory-mapped: read through the flash API.
+// The board overlay's stage_partition (ESP32: 124 KB at 0x3E0000, where
+// Zephyr's tables had scratch_partition before 4.5, #47). Not memory-mapped:
+// read through the flash API.
 static const struct flash_area* area;
 
 static int area_read(void* ctx, size_t offset, void* buf, size_t len) {
@@ -40,7 +41,7 @@ static struct stage_io io = {area_read, area_write, area_erase, 0, NULL};
 
 const struct stage_io* store_staging(void) {
   if (area == NULL) {
-    if (flash_area_open(FIXED_PARTITION_ID(scratch_partition), &area) != 0) return NULL;
+    if (flash_area_open(FIXED_PARTITION_ID(stage_partition), &area) != 0) return NULL;
     io.size = area->fa_size;
   }
   return &io;

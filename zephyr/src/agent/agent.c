@@ -27,6 +27,9 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/reboot.h>
+#ifdef CONFIG_WIFI_ESP32
+#include <esp_wifi.h>
+#endif
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <openthread/thread.h>
 #include <zephyr/net/openthread.h>
@@ -82,8 +85,12 @@ static void count_boot(void) {
 
 // --- CoAP exchange --------------------------------------------------------------
 
-static void on_reply(int16_t code, size_t offset, const uint8_t* payload, size_t len, bool last,
-                     void* user_data) {
+static void on_reply(const struct coap_client_response_data* data, void* user_data) {
+  int16_t code = data->result_code;
+  size_t offset = data->offset;
+  const uint8_t* payload = data->payload;
+  size_t len = data->payload_len;
+  bool last = data->last_block;
   reply_code = code;
   reply_len = 0;
   if (code >= 0 && payload && offset == 0 && len <= sizeof(reply)) {
@@ -270,7 +277,11 @@ static const struct coap_client_request block_match = {.method = COAP_METHOD_GET
 // One Block2 block. The client would fetch the next block itself, but it
 // cannot start a transfer at block n > 0 (its block context starts at 0), so
 // the agent asks block by block and cancels the client's own follow-up.
-static void on_block(int16_t code, size_t offset, const uint8_t* payload, size_t len, bool last, void* user_data) {
+static void on_block(const struct coap_client_response_data* data, void* user_data) {
+  int16_t code = data->result_code;
+  const uint8_t* payload = data->payload;
+  size_t len = data->payload_len;
+  bool last = data->last_block;
   block.code = code;
   block.last = last;
   block.len = 0;
@@ -287,17 +298,21 @@ static void on_block(int16_t code, size_t offset, const uint8_t* payload, size_t
 static bool get_block(const char* path, uint32_t num) {
   // RFC 7959 §2.2: NUM, M = 0, SZX.
   uint32_t value = num << 4 | coap_bytes_to_block_size(STAGE_BLOCK);
-  struct coap_client_option option = {.code = COAP_OPTION_BLOCK2};
-  for (uint32_t v = value; v != 0 || option.len == 0; v >>= 8) option.len++;
-  for (int i = 0; i < option.len; i++) option.value[i] = value >> (8 * (option.len - 1 - i));
   struct coap_client_request req = {
       .method = COAP_METHOD_GET,
       .confirmable = true,
-      .path = path,
       .cb = on_block,
-      .options = &option,
+      .options = {{.code = COAP_OPTION_BLOCK2}},
       .num_options = 1,
   };
+  struct coap_client_option* option = &req.options[0];
+  for (uint32_t v = value; v != 0 || option->len == 0; v >>= 8) option->len++;
+  for (int i = 0; i < option->len; i++) option->value[i] = value >> (8 * (option->len - 1 - i));
+  if (strlen(path) >= sizeof(req.path)) {
+    printk("agent: path of %u B over the client's %u\n", (unsigned)strlen(path), (unsigned)sizeof(req.path));
+    return false;
+  }
+  strcpy(req.path, path);
   k_sem_reset(&reply_sem);
   int err = coap_client_req(&client, sock, (struct sockaddr*)&porta, &req, NULL);
   if (err < 0) {
@@ -349,6 +364,7 @@ static void fetch(void) {
            (unsigned)fetch_offset);
   }
   char path[sizeof("blob/") + 2 * STAGE_HASH_SIZE];
+  BUILD_ASSERT(sizeof(path) <= MAX_PATH_SIZE, "CONFIG_COAP_CLIENT_MAX_PATH_LENGTH is under the blob path");
   strcpy(path, "blob/");
   for (int i = 0; i < STAGE_HASH_SIZE; i++) snprintf(path + 5 + 2 * i, 3, "%02x", stage.hash[i]);
   size_t from = fetch_offset;
@@ -571,6 +587,13 @@ static void agent_main(void* a, void* b, void* c) {
     k_sem_give(&settled_sem);
     if (reboot_pending) {
       printk("agent: rebooting to install %s\n", stage.name);
+#ifdef CONFIG_WIFI_ESP32
+      // A reboot while associated is a CPU-only reset (SW_CPU_RESET) that
+      // leaves the radio's state behind: on Zephyr 4.5 every later connect then
+      // fails with "AP not found" until a hard reset (#47). ESP-IDF stops WiFi
+      // in a shutdown handler; Zephyr's port registers none.
+      esp_wifi_stop();
+#endif
       sys_reboot(SYS_REBOOT_COLD);
     }
   }

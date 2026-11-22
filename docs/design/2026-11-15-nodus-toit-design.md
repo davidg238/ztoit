@@ -248,6 +248,8 @@ are the record of what should be on the node.
 
 - Staging is the board's existing `scratch_partition` (ESP32 default table: 124 KB at 0x3E0000, unused
   without MCUboot swap). No new partition until an image does not fit. Boards without one get no install yet.
+  Zephyr 4.5 dropped `scratch_partition` from its ESP32 tables; ztoit's overlays now declare `stage_partition`
+  at the same 0x3E0000, 124 KB, so the flash layout on a node is unchanged (#47).
 - Something must open the network for the agent to check in (§7 piggyback): until the supervisor reports on
   its own, an install-capable firmware carries a boot container that opens the network periodically.
 - An install kills whatever is running (the reboot). The supervisor will choose the moment later.
