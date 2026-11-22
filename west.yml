@@ -1,15 +1,19 @@
 # ztoit's west manifest: `west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update`.
-# Pins the Zephyr fork (v4.2.0 + ESP32-C6 802.15.4 fixes) and the Toit fork's zephyr-port branch.
+# Pins upstream Zephyr v4.5.0 (the 4.2 fork's ESP32-C6 802.15.4 fixes are upstream by 4.5, #47) and the Toit
+# fork's zephyr-port branch. nRF boards also need patches/zephyr-nrf-802154-hfclk-ready-deferred.patch (#23).
 manifest:
   remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
     - name: davidg238
       url-base: https://github.com/davidg238
   projects:
     - name: zephyr
-      remote: davidg238
-      revision: bc47c6fab9cc9f39f57864f328758158a67c9d0d  # tuvm-c6-radio-fix
+      remote: zephyrproject-rtos
+      revision: v4.5.0
       import:
-        name-allowlist: [hal_espressif, hal_nordic, cmsis, cmsis_6, mbedtls, openthread]
+        name-allowlist: [hal_espressif, hal_nordic, cmsis_6, mbedtls, tf-psa-crypto, openthread, zcbor, liblc3,
+                         picolibc, segger]
     - name: toit
       remote: davidg238
       revision: b3964baa0cef9bd3f5da4fb7512ac3e55f0cc3c0  # zephyr-port

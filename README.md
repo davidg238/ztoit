@@ -8,7 +8,7 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 
   | SoC (CPU) | Link shown | IP | Toit heap | RAM | C heap | Program space | Runs from flash | Installs over the air |
   |---|---|---|---|---|---|---|---|---|
-  | ESP32 WROOM-32 (Xtensa LX6) | WiFi | IPv4 | 48 KB | 192 KB + 96 KB, two banks | ~99 KB | 2.2 MB | yes | yes |
+  | ESP32 WROOM-32 (Xtensa LX6) | WiFi | IPv4 | 44 KB | 192 KB + 96 KB, two banks | ~85 KB | 2.2 MB | yes | yes |
   | ESP32-C6 (RISC-V) | Thread | IPv6 | 160 KB | 427 KB, one region | ~90 KB | 4 MB | yes | yes |
   | nRF52840 (Cortex-M4) | Thread | IPv6 | 80 KB | 256 KB, one region | ~72 KB | 240 KB | yes | no |
   | nRF54L15 (Cortex-M33) | Bluetooth LE, via a phone relay | IPv6, UDP only | 80 KB | 256 KB, one region | ~85 KB | 712 KB | yes | no |
@@ -18,11 +18,12 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
     ztoit has not built. A build carries one link, and its sockets take that link's family.
   - "Toit heap" is the arena Toit objects and task stacks live in, a build setting (`CONFIG_TOIT_HEAP_SIZE`).
     "C heap" is the RAM left after the firmware's static data, thread stacks, the Toit heap and, on the
-    WROOM-32, WiFi's own 44 KB heap; Toit's thread stacks and garbage-collector tables come out of it.
+    WROOM-32, WiFi's own 54 KB heap; Toit's thread stacks and garbage-collector tables come out of it.
   - The WROOM-32 is the tightest: its second 96 KB bank is fully assigned to the thread stacks and the Toit
-    heap (about 4 KB unassigned), so the Toit heap cannot grow much. 100 sleeping tasks do not fit in it (#3).
-  - Measured 2026-11-17 on the builds in use: WiFi + agent (WROOM-32), Thread + agent (C6), the Thread soak
-    (nRF52840 dongle), the benchmark build (RP2350B); 2026-11-21, the push-to-talk build (nRF54L15).
+    heap (312 B unassigned), so the Toit heap cannot grow. 100 sleeping tasks do not fit in it (#3).
+  - Measured on the builds in use: the WROOM-32 (WiFi + agent) 2026-11-22 and the nRF54L15 (push to talk)
+    2026-11-21 on Zephyr 4.5; the C6 (Thread + agent), the nRF52840 dongle (Thread soak) and the RP2350B
+    (benchmark) 2026-11-17 on Zephyr 4.2, not yet re-measured on 4.5.
 
   Stock Toit needed one VM change, in the flash registry; the rest is new Zephyr platform code, plus the
   `zephyr` primitive module (appended after the stock modules, so a forked compiler is needed for now).
@@ -78,12 +79,13 @@ Design decisions: `docs/design/zephyr-port.md`. Known issues and open work: GitH
 
 ## Build
 
-Needs the Zephyr SDK 0.17.4, the [Toit SDK v2.0.0](https://github.com/toitlang/toit/releases/tag/v2.0.0) for the
-host compiler, and an ESP32-C6 board, an ESP32 (WROOM-32) board, an nRF52840 dongle or an RP2350B board.
-The XIAO nRF54L15 needs Zephyr 4.5 and SDK 1.0.1; the other boards move to 4.5 under #47.
+Needs Zephyr 4.5 with the Zephyr SDK 1.0.1, the [Toit SDK v2.0.0](https://github.com/toitlang/toit/releases/tag/v2.0.0)
+for the host compiler, and an ESP32-C6 board, an ESP32 (WROOM-32) board, an nRF52840 dongle, a XIAO nRF54L15 or an
+RP2350B board. The RP2350B has not been rebuilt since the move from Zephyr 4.2.
 
     west init -m https://github.com/davidg238/ztoit ztoit-ws && cd ztoit-ws && west update
-    west blobs fetch hal_espressif
+    west blobs fetch hal_espressif && west packages pip --install
+    # nRF boards: (cd zephyr && git apply ../ztoit/patches/zephyr-nrf-802154-hfclk-ready-deferred.patch)  (#23)
     export ZEPHYR_BASE=$PWD/zephyr TOIT_SRC=$PWD/toit
     # Unpack the Toit SDK to ~/.local/state/ztoit/sdk/toit, then build the fork's compiler (it knows the
     # `zephyr` primitives; needs cmake and ninja) into an SDK with the fork's lib/:

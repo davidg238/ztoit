@@ -1,5 +1,5 @@
 diff --git a/modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_clock_zephyr.c b/modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_clock_zephyr.c
-index 1dcf724b0e5..c38872fecf2 100644
+index 024d856a7cc..893dde74998 100644
 --- a/modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_clock_zephyr.c
 +++ b/modules/hal_nordic/nrf_802154/sl_opensource/platform/nrf_802154_clock_zephyr.c
 @@ -38,11 +38,45 @@ bool nrf_802154_clock_hfclk_is_running(void)
@@ -55,9 +55,9 @@ index 1dcf724b0e5..c38872fecf2 100644
 +	hfclk_requesting = true;
  	int ret = onoff_request(mgr, &hfclk_cli);
 +	hfclk_requesting = false;
+ 
  	__ASSERT_NO_MSG(ret >= 0);
  	(void)ret;
- }
 @@ -77,6 +113,8 @@ void nrf_802154_clock_hfclk_stop(void)
  
  	__ASSERT_NO_MSG(mgr != NULL);
@@ -65,5 +65,24 @@ index 1dcf724b0e5..c38872fecf2 100644
 +	k_timer_stop(&hfclk_ready_timer);
 +
  	int ret = onoff_cancel_or_release(mgr, &hfclk_cli);
+ 
+ 	__ASSERT_NO_MSG(ret >= 0);
+@@ -113,7 +151,9 @@ void nrf_802154_clock_hfclk_start(void)
+ 	}
+ #endif
+ 
++	hfclk_requesting = true;
+ 	int ret = nrf_clock_control_request(CLK_DEV, NULL, &hfclk_cli);
++	hfclk_requesting = false;
+ 
  	__ASSERT_NO_MSG(ret >= 0);
  	(void)ret;
+@@ -121,6 +161,8 @@ void nrf_802154_clock_hfclk_start(void)
+ 
+ void nrf_802154_clock_hfclk_stop(void)
+ {
++	k_timer_stop(&hfclk_ready_timer);
++
+ 	int ret = nrf_clock_control_cancel_or_release(CLK_DEV, NULL, &hfclk_cli);
+ 
+ 	__ASSERT_NO_MSG(ret >= 0);

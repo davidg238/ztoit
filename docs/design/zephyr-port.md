@@ -177,3 +177,20 @@ Implements "peripherals come from Zephyr" above.
 - ztoit stays current on 4.5 only (David, 2026-11-21): nobody else depends on 4.2, and two trees cost two SDKs
   and the `ZEPHYR_BASE` trap (#42). This supersedes "4.2 stays" in the 2026-11-19 addendum once #47 re-proves the
   C6, WROOM-32 and dongle on 4.5. ktau (#41) ended at rung 7; its posts tell the 4.2 → 4.5 story.
+
+## Addendum 2026-11-22: what moving to 4.5 took (#47)
+
+All four boards build from `~/zephyr-4.5` (upstream v4.5.0; the 4.2 fork's C6 radio fixes are upstream) and
+`env.sh` points there. Re-proven: C6 Thread + agent install, WROOM-32 WiFi + agent installs, dongle Thread soak.
+What 4.5 broke, and the fix (each one line in the code it touches):
+
+- OpenThread's default security config makes the `PSA_WANT_*` symbols promptless, so conf lines were ignored:
+  `TOIT` now `select`s them (`modules/toit/Kconfig`); `crypto_mbedtls3.conf` and the version branch are gone.
+- CoAP client API (response struct; path and options in the request): `agent.c`. The 69-character blob path
+  needs `CONFIG_COAP_CLIENT_MAX_PATH_LENGTH=69`, guarded by a `BUILD_ASSERT`.
+- The CoAP client now takes an eventfd: Toit declares `ZVFS_EVENTFD_ADD_SIZE_TOIT`.
+- The Espressif tables dropped `scratch_partition`: the overlays declare `stage_partition` at the same place.
+- The ESP WiFi heap grew 40 → 50 KB: the WROOM-32 Toit heap is 44 KB. A reboot while associated left the radio
+  unable to find the AP: the agent calls `esp_wifi_stop()` before its install reboot.
+- nRF52840: the #23 clock patch is ported (4.5 uses the other branch of the same file), and OpenThread's radio
+  workqueue overflows 512 B: 1024 B in the dongle's board conf.

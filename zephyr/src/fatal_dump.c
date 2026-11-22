@@ -10,7 +10,7 @@
 #include <zephyr/fatal.h>
 #include <zephyr/sys/reboot.h>
 #include <string.h>
-#include <nrf.h>
+#include <nrfx.h>
 
 #define DUMP_MAGIC 0x23fa7a1dU
 #define STACK_WORDS 24
@@ -73,12 +73,22 @@ static void report(void) {
   printk("dbg: resetreas 0x%x gpregret2 0x%x\n", cause, (unsigned)NRF_POWER->GPREGRET2);
   NRF_POWER->GPREGRET2 = 0;
   if (dump.magic == DUMP_MAGIC) {
-    printk("dbg: FATAL reason %u pc %08x lr %08x psr %08x isr %u thread %s at %lld ms\n",
-           dump.reason, dump.pc, dump.lr, dump.psr, dump.in_isr, dump.thread, dump.uptime_ms);
+    // Short lines, paced: the CDC ring is smaller than one long line (#47).
+    printk("dbg: FATAL reason %u at %lld ms\n", dump.reason, dump.uptime_ms);
+    k_msleep(100);
+    printk("dbg: thread %s isr %u\n", dump.thread, dump.in_isr);
+    k_msleep(100);
+    printk("dbg: pc %08x lr %08x\n", dump.pc, dump.lr);
+    k_msleep(100);
+    printk("dbg: psr %08x\n", dump.psr);
+    k_msleep(100);
     for (int i = 0; i < STACK_WORDS; i += 8) {
-      printk("dbg: stack %08x %08x %08x %08x %08x %08x %08x %08x\n",
-             dump.stack[i], dump.stack[i + 1], dump.stack[i + 2], dump.stack[i + 3],
-             dump.stack[i + 4], dump.stack[i + 5], dump.stack[i + 6], dump.stack[i + 7]);
+      printk("dbg: stack %08x %08x %08x %08x\n", dump.stack[i], dump.stack[i + 1], dump.stack[i + 2],
+             dump.stack[i + 3]);
+      k_msleep(100);
+      printk("dbg: stack %08x %08x %08x %08x\n", dump.stack[i + 4], dump.stack[i + 5], dump.stack[i + 6],
+             dump.stack[i + 7]);
+      k_msleep(100);
     }
     dump.magic = 0;
   }
