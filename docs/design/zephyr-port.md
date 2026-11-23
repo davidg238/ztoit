@@ -194,3 +194,15 @@ What 4.5 broke, and the fix (each one line in the code it touches):
   unable to find the AP: the agent calls `esp_wifi_stop()` before its install reboot.
 - nRF52840: the #23 clock patch is ported (4.5 uses the other branch of the same file), and OpenThread's radio
   workqueue overflows 512 B: 1024 B in the dongle's board conf.
+
+## Addendum 2026-11-22: Thread on the XIAO, and a UART for Toit (#51, #52)
+
+- Correction to the line above: the radio workqueue overflow is not the dongle's alone. The XIAO nRF54L15 hit it
+  during an agent fetch, so `CONFIG_OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE=1024` lives in `prj_thread.conf` (#51).
+- The XIAO's agent staging area (`stage_partition`, 124 KB as on the C6) comes off the end of its toit partition,
+  now 588 KB (`boards/xiao_nrf54l15_nrf54l15_cpuapp.overlay`).
+- `zephyr.Uart` receives only: an ISR fills one ring, Toit polls it every 20 ms, as the microphone does. One UART
+  at a time; dropped bytes are counted and returned by `close`. The ring is plain `.bss`: `RING_BUF_DECLARE` is
+  `__noinit`, which the WROOM-32 maps to its full dram1 bank. Transmit waits for a board that needs it.
+- App wiring stays out of the board overlays: the Vindriktning's pin and the I2C it displaces are in
+  `zephyr/vindriktning.overlay` with `prj_vin.conf` (#52).

@@ -1,0 +1,22 @@
+/* The Vindriktning (#52): the PM1006-like sensor's TX, through a 5 V -> 3.3 V
+ * divider, on GPIO21 (the wiring of ~/workspaceToit/vindriktning). GPIO21 is
+ * the board's I2C SDA, so i2c0 is off. Receive only: uart2 gets no TX pin. */
+&i2c0 {
+	status = "disabled";
+};
+
+&pinctrl {
+	uart2_vin: uart2_vin {
+		group1 {
+			pinmux = <UART2_RX_GPIO21>;
+			input-enable;
+		};
+	};
+};
+
+&uart2 {
+	status = "okay";
+	current-speed = <9600>;
+	pinctrl-0 = <&uart2_vin>;
+	pinctrl-names = "default";
+};
