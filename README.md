@@ -11,7 +11,7 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
   | ESP32 WROOM-32 (Xtensa LX6) | WiFi | IPv4 | 44 KB | 192 KB + 96 KB, two banks | ~85 KB | 2.2 MB | yes | yes |
   | ESP32-C6 (RISC-V) | Thread | IPv6 | 160 KB | 427 KB, one region | ~90 KB | 4 MB | yes | yes |
   | nRF52840 (Cortex-M4) | Thread | IPv6 | 80 KB | 256 KB, one region | ~72 KB | 240 KB | yes | no |
-  | nRF54L15 (Cortex-M33) | Bluetooth LE, via a phone relay | IPv6, UDP only | 80 KB | 256 KB, one region | ~85 KB | 712 KB | yes | no |
+  | nRF54L15 (Cortex-M33) | Thread; Bluetooth LE, via a phone relay | IPv6 (BLE: UDP only) | 80 KB | 256 KB, one region | ~85 KB (BLE build) | 588 KB | yes | yes (Thread) |
   | RP2350B (Cortex-M33) | none | — | 160 KB | 520 KB, one region | ~197 KB | 128 KB, in RAM | no | no |
 
   - "Link shown" is what ztoit has run on the board, not everything the chip has: the C6 also has WiFi, which
@@ -29,7 +29,7 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
   `zephyr` primitive module (appended after the stock modules, so a forked compiler is needed for now).
 - **Programs run from flash in place (XIP)**, installed in a flash registry (the RP2350B installs into RAM:
   Zephyr has no flash driver for its QSPI controller yet).
-- **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on the C6 and the nRF52840; the nRF52840
+- **IPv6 UDP and TCP over OpenThread** from Toit's `net` library, on the C6, the nRF52840 and the nRF54L15; the nRF52840
   dongle runs a UDP + TCP echo soak on a wall wart.
 - **IPv4 over WiFi** on the WROOM-32: the station associates on the first `net.open` and disconnects after
   the last close; `zephyr/toit/wifi_echo.toit` does a UDP echo each cycle. The image holds no WiFi credentials.
@@ -39,7 +39,7 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 - **Push to talk** on the nRF54L15 (with [ktau](https://github.com/davidg238/ktau)): the board's PDM microphone
   through Zephyr's `dmic` driver, LC3-encoded, streamed over BLE to a speech-to-text and LLM host, and the reply
   back. Write-up: [Push to talk](https://ekorau.com/push-to-talk-toit-tailnet-llm-and-back/).
-- **Containers installed over the air**, on the WROOM-32 (WiFi) and the C6 (Thread): a C agent checks in with
+- **Containers installed over the air**, on the WROOM-32 (WiFi), the C6 and the nRF54L15 (Thread): a C agent checks in with
   a gateway over CoAP, fetches a signed image, verifies it (SHA-256, ed25519) and installs it at the next
   boot, beside the containers built into the firmware (#31).
 - **At least as fast as stock Toit** on a simple benchmark ([STIC](https://github.com/davidg238/performance_stic), same ESP32-C6, v2.0.0 both sides):
@@ -72,6 +72,7 @@ The VM changes live in the Toit fork's
 | 7 | Fourth SoC: ESP32 WROOM-32 over WiFi (IPv4), credentials from the settings store | [#25](https://github.com/davidg238/ztoit/issues/25), [#30](https://github.com/davidg238/ztoit/issues/30) |
 | 8 | Signed containers installed over the air, WiFi and Thread; run-once and replace | [#31](https://github.com/davidg238/ztoit/issues/31) |
 | 9 | Fifth SoC: XIAO nRF54L15 on Zephyr 4.5; UDP over BLE, microphone, LC3, I2C; push to talk | [#41](https://github.com/davidg238/ztoit/issues/41) |
+| 10 | XIAO nRF54L15 on Thread: the agent checks in, and `faber install` puts a signed container on it over the air | [#51](https://github.com/davidg238/ztoit/issues/51) |
 
 ![ESP32-C6 running io.toit: BMP180, LED on GPIO3, on-board RGB LED](docs/img/c6-io.jpg)
 
@@ -103,10 +104,11 @@ BOOTSEL mode. Console is USB CDC ACM. The RNG is Zephyr's non-cryptographic time
 
 XIAO nRF54L15 (Zephyr 4.5): `west build -b xiao_nrf54l15/nrf54l15/cpuapp -d build-xiao ztoit/zephyr --
 -DEXTRA_CONF_FILE=prj_ble.conf`, then `west flash -d build-xiao` over the board's USB (CMSIS-DAP, OpenOCD).
-A relay (rete's Pixel app) bonds once, Just Works, and forwards the UDP.
+A relay (rete's Pixel app) bonds once, Just Works, and forwards the UDP. For Thread instead, use the Thread and
+agent confs below in place of `prj_ble.conf`.
 
 Thread: copy `zephyr/prj_thread.local.conf.example` to `prj_thread.local.conf`, fill in your network's
-dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6 or nRF52840). The node joins on
+dataset, and add `-DEXTRA_CONF_FILE="prj_thread.conf;prj_thread.local.conf"` (C6, nRF52840 or nRF54L15). The node joins on
 the first `net.open`, and after the last close stays attached as a sleepy end device
 (`-DCONFIG_TOIT_THREAD_DOWN_DETACH=y`: disables Thread instead).
 
@@ -119,7 +121,7 @@ Agent (optional, WiFi or Thread): add `prj_agent.conf` and a git-ignored local c
 `prj_thread.local.conf`, see the `.example` files) with the gateway's address and its public signing key. At
 each `net.open` the agent checks in over CoAP; a signed container image named by the gateway is fetched into a
 staging partition, verified (SHA-256, ed25519), and installed into the registry at the next boot (#31;
-`docs/design/2026-11-15-nodus-toit-design.md`). Shown on the WROOM-32 over WiFi and the ESP32-C6 over Thread.
+`docs/design/2026-11-15-nodus-toit-design.md`). Shown on the WROOM-32 over WiFi and the ESP32-C6 and XIAO nRF54L15 over Thread.
 The host tool must build images with the same SDK the firmware reports: `tools/sdk-id.sh` prints that identity
 (`v2.0.0+zephyr.<fork commit>`), and `tools/fork-sdk.sh` stamps it into `$TOIT_HOST version`, so rerun it after
 changing the fork.
