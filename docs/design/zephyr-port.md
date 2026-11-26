@@ -206,3 +206,11 @@ What 4.5 broke, and the fix (each one line in the code it touches):
   `__noinit`, which the WROOM-32 maps to its full dram1 bank. Transmit waits for a board that needs it.
 - App wiring stays out of the board overlays: the Vindriktning's pin and the I2C it displaces are in
   `zephyr/vindriktning.overlay` with `prj_vin.conf` (#52).
+
+## Addendum 2026-11-26: the fork and upstream Toit
+
+- **ztoit maintains its own Toit fork**; upstream fixes come across by cherry-pick. The comparison with
+  upstream's Zephyr port, the name collisions and the pick log are in `2026-11-26-toit-upstream-divergence.md`.
+- **Two statements at the top of this document are superseded by the code.** The current `Thread*` is found from
+  `k_current_get()`, not kept in k_thread custom data (Espressif's WiFi adapter owns that slot). Toit heap pages
+  come from a static arena with a page map, not `sys_heap` (`os_zephyr.cc`, both with their reasons).
