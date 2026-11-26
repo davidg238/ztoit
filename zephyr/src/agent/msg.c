@@ -54,7 +54,8 @@ size_t msg_pull(uint8_t* buf, size_t cap, const char* id, int64_t cursor, int64_
 }
 
 // A #push of one row, [nodeSeq, path, kind, value, bid, monoMs]: push_open
-// writes up to the value, the caller the value, push_close the rest.
+// writes up to the value, the caller the value, push_close the rest. The row's
+// monoMs is when its value was captured (rete#444), the message's when it is sent.
 static bool push_open(zcbor_state_t* s, const char* id, int64_t bid, int64_t seq, const char* path) {
   return record_start(s, "push", 4) &&
          sym(s, "id") && str(s, id) &&
@@ -64,8 +65,8 @@ static bool push_open(zcbor_state_t* s, const char* id, int64_t bid, int64_t seq
              zcbor_int64_put(s, seq) && str(s, path) && zcbor_int64_put(s, 2);  // cell
 }
 
-static bool push_close(zcbor_state_t* s, int64_t bid, int64_t mono) {
-  return zcbor_int64_put(s, bid) && zcbor_int64_put(s, mono) &&
+static bool push_close(zcbor_state_t* s, int64_t bid, int64_t captured, int64_t mono) {
+  return zcbor_int64_put(s, bid) && zcbor_int64_put(s, captured) &&
            zcbor_list_end_encode(s, 6) &&
          zcbor_list_end_encode(s, 1) &&
          sym(s, "mono") && zcbor_int64_put(s, mono) &&
@@ -82,7 +83,7 @@ size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int
               sym(s, "board") && str(s, b->board) &&
               sym(s, "build") && str(s, b->build) &&
             record_end(s, 4) &&
-            push_close(s, bid, mono);
+            push_close(s, bid, mono, mono);
   return done(ok, s, buf);
 }
 
@@ -101,7 +102,17 @@ size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64
               record_end(s, 2) &&
               sym(s, "lifecycle") && sym(s, lifecycle) &&
             record_end(s, 2) &&
-            push_close(s, bid, mono);
+            push_close(s, bid, mono, mono);
+  return done(ok, s, buf);
+}
+
+size_t msg_push_obs(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                    const char* name, int64_t value, int64_t captured) {
+  char path[64];
+  int n = snprintf(path, sizeof(path), "obs/%s", name);
+  if (n < 0 || (size_t)n >= sizeof(path)) return 0;
+  ZCBOR_STATE_E(s, BACKUPS, buf, cap, 1);
+  bool ok = push_open(s, id, bid, seq, path) && zcbor_int64_put(s, value) && push_close(s, bid, captured, mono);
   return done(ok, s, buf);
 }
 

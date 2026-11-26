@@ -32,6 +32,12 @@ size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int
 size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
                     const char* name, const uint8_t hash[32], int64_t size, const char* lifecycle);
 
+// A #push of one obs/<name> cell row whose value is a bare int, an app's
+// observation (nodus-toit design, addendum 2026-11-25): posted at `captured`,
+// sent at `mono`.
+size_t msg_push_obs(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                    const char* name, int64_t value, int64_t captured);
+
 // A goal/apps/<name> value (MANIFEST.cddl `app`); pointers into the value.
 struct msg_app {
   const uint8_t* sig;   // 64 B

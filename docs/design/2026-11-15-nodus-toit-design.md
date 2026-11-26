@@ -288,3 +288,28 @@ Where the build differs from the addendum above, and why. Evidence is on #31.
 - **SDK identity (§6, #24).** Node and host tool report `tools/sdk-id.sh`'s string, `<stock version>+zephyr.<fork
   commit>`; `tools/fork-sdk.sh` stamps it into `$TOIT_HOST version`, the firmware stamps it at build time
   (`zephyr/ztoit_ids.cmake`). A fork commit without a rerun of `fork-sdk.sh` is a mismatch by design.
+
+## Addendum 2026-11-25: an app posts an observation (#52 step 2)
+
+§11's "post `obs` cells" primitive, first user the Vindriktning's `obs/vin/pm25` (David 2026-11-22, #52).
+
+- **The rule:** an app posts an int under a name, and the agent pushes it as the cell `obs/<name>` at the next
+  check-in. Toit: `zephyr.observe "vin/pm25" 37`. The last post wins; nothing is queued behind it.
+- **§6 amended.** "Toit apps never see paths" becomes: an app names a cell under `obs/` and nothing else. The
+  agent writes the `obs/` prefix, so an app cannot write `goal/`, `sys/` or `tel/`.
+- **The value is a bare int**, not a record: the path already says what it is, and a manifest scalar rule
+  checks it. Floats, strings and records wait for a user that needs them.
+- **Posting does not open the network** (§7 piggyback): the app opens it when it wants the value reported.
+  The Vindriktning posts every reading and opens the network once a minute, a constant in the app.
+- **Parts.** Fork: primitive `zephyr.observe`, calling weak `ztoit_observe()` (UNSUPPORTED without an agent).
+  ztoit: `zephyr/src/agent/obs.c`, a fixed table of cells in plain C with a host test; `agent.c` locks it and
+  pushes each unacked cell after `obs/apps`. A full table is an error thrown to the app, not a dropped value.
+- **Seqs.** A cell takes a node seq when first pushed and is resent with it until acked, as `obs/apps` is. A
+  post while its push is in flight takes a new seq, so the newer value is not acked by the older one's ack.
+- **Time.** The row carries the uptime at the post (rete#444: a row's time is its capture), the message the
+  uptime at the send. `push_close` takes both; `obs/build` and `obs/apps` pass the same value twice.
+- **Cost.** RAM: the table (`OBS_CELLS` × one name, value, time and seq). One more exchange per changed cell
+  per check-in, so `ztoit_link_going_down`'s bound grows with the table.
+- **Needs rete.** porta's manifest gate acks a row whose path has no rule but does not apply it
+  (`porta/internal/space/store.go`, "refused-but-kept"): `obs/vin/pm25` needs a rule in rete's
+  `protocol/MANIFEST.cddl` (`kind=cell class=routine dir=up`, value `int`) before porta stores it.

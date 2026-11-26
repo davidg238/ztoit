@@ -5,11 +5,15 @@
 // checks in with porta over CoAP:
 //   POST /space #pull  -> #batch (logged; the cursor advances)
 //   POST /space #push  -> #ack   (obs/build, once per boot, until acked;
-//                                  obs/apps/<name> after an install, until acked)
+//                                  obs/apps/<name> after an install, until acked;
+//                                  obs/<name> after an app posts it, until acked)
 //   GET /blob/<hash>   -> 2.05   (an image, a Block2 block at a time)
 // Install (design addendum 2026-11-17): a goal/apps/<name> row whose image is
 // not the installed one is fetched into staging across check-ins, verified,
 // and the node reboots; main() installs it into the registry before the VM.
+// Observations (design addendum 2026-11-25): an app posts an int under a name
+// (zephyr.observe, ztoit_observe) into obs.c's table, and each check-in pushes
+// every cell not yet acked. Posting does not open the network.
 // Not yet: other goals, console, safe mode.
 //
 // State: `bid` is a boot counter persisted with Zephyr settings (rete
@@ -36,6 +40,7 @@
 #endif
 
 #include "msg.h"
+#include "obs.h"
 #include "store.h"
 #include "ztoit_ids.h"  // ZTOIT_SDK, ZTOIT_BUILD: generated each build (zephyr/ztoit_ids.cmake)
 
@@ -55,7 +60,7 @@ static int64_t bid;
 static int64_t cursor, hw, wak;
 static bool build_acked;
 // Node seqs restart at 1 each boot (porta rewinds its high-water on a new
-// bid). obs/build is seq 1; each obs/apps push takes the next.
+// bid). obs/build is seq 1; each obs/apps and obs/<name> push takes the next.
 static const int64_t BUILD_SEQ = 1;
 static int64_t node_seq = BUILD_SEQ;
 
@@ -445,6 +450,42 @@ static void push_obs_app(void) {
   }
 }
 
+// --- obs/<name> ------------------------------------------------------------------
+
+// Posted from the VM thread, pushed from the agent's.
+static K_MUTEX_DEFINE(obs_lock);
+static struct obs_table obs;
+
+// The fork's zephyr.observe primitive: 0, -EINVAL, -ENOSPC (obs_post).
+int ztoit_observe(const uint8_t* name, size_t length, int64_t value) {
+  k_mutex_lock(&obs_lock, K_FOREVER);
+  int err = obs_post(&obs, (const char*)name, length, value, k_uptime_get());
+  k_mutex_unlock(&obs_lock);
+  return err;
+}
+
+// Each unacked cell once, so a check-in is at most OBS_CELLS of these
+// exchanges however often the app posts; the first that fails ends them.
+static void push_obs(void) {
+  for (int i = 0; i < OBS_CELLS; i++) {
+    struct obs_cell cell;
+    k_mutex_lock(&obs_lock, K_FOREVER);
+    bool any = obs_next(&obs, &node_seq, &cell);
+    k_mutex_unlock(&obs_lock);
+    if (!any) return;
+    struct msg_reply r;
+    int64_t mono = k_uptime_get();
+    size_t len =
+        msg_push_obs(request, sizeof(request), id, bid, mono, cell.seq, cell.name, cell.value, cell.captured);
+    if (!len || !exchange(sock, (struct sockaddr*)&porta, len, &r, NULL) || r.kind != MSG_ACK) return;
+    hw = r.hw;
+    k_mutex_lock(&obs_lock, K_FOREVER);
+    obs_ack(&obs, hw);
+    k_mutex_unlock(&obs_lock);
+    printk("agent: obs/%s pushed: %lld\n", cell.name, (long long)cell.value);
+  }
+}
+
 // --- Check-in --------------------------------------------------------------------
 
 static void check_in(void) {
@@ -468,6 +509,7 @@ static void check_in(void) {
       }
     }
     push_obs_app();
+    push_obs();
     fetch();
   }
   if (resync_pending) cursor = 0;
@@ -518,12 +560,14 @@ static void on_addr(struct net_mgmt_event_callback* cb, uint64_t event, struct n
 
 // The fork's wifi_down calls this before disconnecting. Without it an app that
 // closes the network straight after its own exchange cut the agent's check-in
-// off mid-flight (3 of 17 cycles, -EINVAL on the retransmit). Bounded: a
-// check-in is at most three exchanges, and a fetch stops starting blocks
-// TIMEOUT_MS after this call (fetch).
+// off mid-flight (3 of 17 cycles, -EINVAL on the retransmit). Bounded: before
+// its fetch a check-in is at most CHECK_IN_EXCHANGES exchanges of TIMEOUT_MS
+// each, and a fetch stops starting blocks TIMEOUT_MS after this call (fetch).
+// The pull, obs/build, obs/apps, then each obs/<name> cell (push_obs).
+#define CHECK_IN_EXCHANGES (3 + OBS_CELLS)
 void ztoit_link_going_down(void) {
   atomic_set(&going_down_at, (atomic_val_t)k_uptime_get());
-  if (atomic_get(&owed) && k_sem_take(&settled_sem, K_MSEC(2 * TIMEOUT_MS + 1000)) != 0) {
+  if (atomic_get(&owed) && k_sem_take(&settled_sem, K_MSEC(CHECK_IN_EXCHANGES * TIMEOUT_MS + 1000)) != 0) {
     printk("agent: link going down mid check-in\n");
   }
 }

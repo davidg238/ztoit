@@ -1,7 +1,7 @@
 // Host test for the agent's codec: its bytes must equal what rete's Go cval
 // encodes for the same records (goldens generated with protocol/cval, the
 // codec porta decodes with), and it must decode cval's replies.
-// The install goldens (GOLD_app*, GOLD_push_app) come from porta's own
+// The install goldens (GOLD_app*, GOLD_push_app) and GOLD_push_obs come from porta's own
 // encoders: test/gen/main.go, `go run .` there.
 // Run: sh zephyr/src/agent/test/run.sh
 #include <stdio.h>
@@ -26,6 +26,8 @@ static const char GOLD_app_alg[] = "d81b82d82763417070a2d827637369675840d5e06ad8
 static const char GOLD_push_app[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186026e6f62732f617070732f68656c6c6f02d81b82d827664170704f6273a2d82765696d616765d81b82d82767426c6f62526566a2d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276473697a65190258d827696c6966656379636c65d8276772756e6e696e67071a00011170d827646d6f6e6f1a00011170";
 static const char GOLD_push_app_erased[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186026e6f62732f617070732f68656c6c6f02d81b82d827664170704f6273a2d82765696d616765d81b82d82767426c6f62526566a2d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276473697a65190258d827696c6966656379636c65d82766657261736564071a00011170d827646d6f6e6f1a00011170";
 static const char GOLD_push_app_refused[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186026e6f62732f617070732f68656c6c6f02d81b82d827664170704f6273a2d82765696d616765d81b82d82767426c6f62526566a2d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276473697a65190258d827696c6966656379636c65d8276772656675736564071a00011170d827646d6f6e6f1a00011170";
+// wire.EncodePush of obs/vin/pm25 = 37, seq 3: the row captured at 65000, the message sent at 70000.
+static const char GOLD_push_obs[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186036c6f62732f76696e2f706d32350218250719fde8d827646d6f6e6f1a00011170";
 static const char HASH[] = "1783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486";
 static const char SIG[] = "d5e06ad84a21acbc1a10ea63faf4277b384d8157a38b4ffc3f1319db87011ceb3f08157402bc0288d1f8506a5b73fae4c2ad70097c085edd3cf8dd678e34bf01";
 
@@ -106,6 +108,11 @@ int main(void) {
   same("push(obs/apps/hello, #erased) encodes as wire.EncodePush", buf, n, GOLD_push_app_erased);
   n = msg_push_app(buf, sizeof buf, "a4cf12345678", 7, 70000, 2, "hello", hash, 600, "refused");
   same("push(obs/apps/hello, #refused) encodes as wire.EncodePush", buf, n, GOLD_push_app_refused);
+
+  n = msg_push_obs(buf, sizeof buf, "a4cf12345678", 7, 70000, 3, "vin/pm25", 37, 65000);
+  same("push(obs/vin/pm25 = 37) encodes as wire.EncodePush", buf, n, GOLD_push_obs);
+  check("push(obs/<name>) into a short buffer answers 0",
+        msg_push_obs(buf, 40, "a4cf12345678", 7, 70000, 3, "vin/pm25", 37, 65000) == 0);
 
   struct msg_app a;
   n = unhex(GOLD_app, in);

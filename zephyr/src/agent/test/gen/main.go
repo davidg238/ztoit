@@ -82,5 +82,11 @@ func main() {
 		}))
 		fmt.Printf("PUSH %s %s\n", lc, hex.EncodeToString(push))
 	}
+	// obs/<name>: an app's bare int, posted at 65000 and sent at 70000 (rete#444: the row's time is its capture).
+	pm25 := must(cval.Encode(int64(37)))
+	obs := must(wire.EncodePush("a4cf12345678", 7, 70000, []space.Entry{
+		{Seq: 3, Path: "obs/vin/pm25", Kind: cval.KindCell, Value: pm25, BootID: 7, MonoMs: 65000},
+	}))
+	fmt.Printf("OBS  %s\n", hex.EncodeToString(obs))
 	fmt.Printf("BLOB %s\n", hex.EncodeToString(blob))
 }
