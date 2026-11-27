@@ -53,24 +53,43 @@ size_t msg_pull(uint8_t* buf, size_t cap, const char* id, int64_t cursor, int64_
   return done(ok, s, buf);
 }
 
-// A #push of one row, [nodeSeq, path, kind, value, bid, monoMs]: push_open
-// writes up to the value, the caller the value, push_close the rest. The row's
-// monoMs is when its value was captured (rete#444), the message's when it is sent.
-static bool push_open(zcbor_state_t* s, const char* id, int64_t bid, int64_t seq, const char* path) {
+// A #push: push_head writes up to the rows, then each row is row_open, its
+// value and row_close, and push_tail the rest. A row is [nodeSeq, path, kind,
+// value, bid, monoMs]; its (bid, monoMs) is when its value was captured
+// (rete#444), the message's mono when it is sent.
+static bool push_head(zcbor_state_t* s, const char* id, int64_t bid, size_t n_rows) {
   return record_start(s, "push", 4) &&
          sym(s, "id") && str(s, id) &&
          sym(s, "bid") && zcbor_int64_put(s, bid) &&
-         sym(s, "ent") && zcbor_list_start_encode(s, 1) &&
-           zcbor_list_start_encode(s, 6) &&
-             zcbor_int64_put(s, seq) && str(s, path) && zcbor_int64_put(s, 2);  // cell
+         sym(s, "ent") && zcbor_list_start_encode(s, n_rows);
+}
+
+static bool row_open(zcbor_state_t* s, int64_t seq, const char* path, int64_t kind) {
+  return zcbor_list_start_encode(s, 6) && zcbor_int64_put(s, seq) && str(s, path) && zcbor_int64_put(s, kind);
+}
+
+static bool row_close(zcbor_state_t* s, int64_t bid, int64_t captured) {
+  return zcbor_int64_put(s, bid) && zcbor_int64_put(s, captured) && zcbor_list_end_encode(s, 6);
+}
+
+static bool push_tail(zcbor_state_t* s, size_t n_rows, int64_t mono) {
+  return zcbor_list_end_encode(s, n_rows) &&
+         sym(s, "mono") && zcbor_int64_put(s, mono) &&
+         record_end(s, 4);
+}
+
+// rete protocol/cval Kind: a cell keeps its last value, a stream row is an event.
+#define KIND_STREAM 1
+#define KIND_CELL 2
+
+// A #push of one cell row: push_open writes up to the value, the caller the
+// value, push_close the rest.
+static bool push_open(zcbor_state_t* s, const char* id, int64_t bid, int64_t seq, const char* path) {
+  return push_head(s, id, bid, 1) && row_open(s, seq, path, KIND_CELL);
 }
 
 static bool push_close(zcbor_state_t* s, int64_t bid, int64_t captured, int64_t mono) {
-  return zcbor_int64_put(s, bid) && zcbor_int64_put(s, captured) &&
-           zcbor_list_end_encode(s, 6) &&
-         zcbor_list_end_encode(s, 1) &&
-         sym(s, "mono") && zcbor_int64_put(s, mono) &&
-         record_end(s, 4);
+  return row_close(s, bid, captured) && push_tail(s, 1, mono);
 }
 
 size_t msg_push_build(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono,
@@ -114,6 +133,36 @@ size_t msg_push_obs(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64
   ZCBOR_STATE_E(s, BACKUPS, buf, cap, 1);
   bool ok = push_open(s, id, bid, seq, path) && zcbor_int64_put(s, value) && push_close(s, bid, captured, mono);
   return done(ok, s, buf);
+}
+
+static size_t push_prints(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                          const struct msg_print* rows, size_t n) {
+  ZCBOR_STATE_E(s, BACKUPS, buf, cap, 1);
+  bool ok = push_head(s, id, bid, n);
+  for (size_t i = 0; ok && i < n; i++) {
+    const struct msg_print* p = &rows[i];
+    ok = row_open(s, seq + i, "tel/print", KIND_STREAM) &&
+         record_start(s, "Print", 1) && sym(s, "text") && zcbor_tstr_encode_ptr(s, p->text, p->len) &&
+         record_end(s, 1) &&
+         row_close(s, p->bid, p->captured);
+  }
+  ok = ok && push_tail(s, n, mono);
+  return done(ok, s, buf);
+}
+
+// Rows are few (a push holds what MSG_PUSH_MAX allows), so the prefix is found
+// by encoding one row fewer until it fits.
+size_t msg_push_prints(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                       const struct msg_print* rows, size_t* n) {
+  for (size_t k = *n; k > 0; k--) {
+    size_t len = push_prints(buf, cap, id, bid, mono, seq, rows, k);
+    if (len) {
+      *n = k;
+      return len;
+    }
+  }
+  *n = 0;
+  return 0;
 }
 
 static bool is(const struct zcbor_string* z, const char* want) {

@@ -19,8 +19,8 @@ if(CONFIG_SOC_SERIES_ESP32)
   endif()
 endif()
 if(CONFIG_TOIT_AGENT)
-  target_sources(app PRIVATE src/agent/agent.c src/agent/msg.c src/agent/obs.c src/agent/stage.c
-                             src/agent/store.c src/agent/ed25519.c)
+  target_sources(app PRIVATE src/agent/agent.c src/agent/console.c src/agent/msg.c src/agent/obs.c
+                             src/agent/stage.c src/agent/store.c src/agent/ed25519.c)
   # Vendored TweetNaCl (ed25519.c's header): kept byte for byte, warnings and all.
   set_source_files_properties(src/agent/ed25519.c PROPERTIES COMPILE_OPTIONS -w)
   target_link_libraries(app PRIVATE mbedTLS)

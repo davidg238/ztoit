@@ -19,6 +19,10 @@ struct msg_build {
   const char* build;
 };
 
+// The largest message the agent sends: porta caps a datagram at 512 B
+// (space.MaxBatchBytes, PROTOCOL-NSL §5.3), and the agent's request buffer is this.
+#define MSG_PUSH_MAX 512
+
 // Each answers the encoded length, or 0 if it did not fit.
 size_t msg_pull(uint8_t* buf, size_t cap, const char* id, int64_t cursor, int64_t bid, int64_t hw,
                 int64_t wak);
@@ -37,6 +41,22 @@ size_t msg_push_app(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64
 // sent at `mono`.
 size_t msg_push_obs(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
                     const char* name, int64_t value, int64_t captured);
+
+// One tel/print stream row (MANIFEST.cddl `print`, #Print{#text}): a line a
+// Toit program printed, captured at `captured` of boot `bid` (nodus-toit
+// design, addendum 2026-11-27). text need not end in a NUL.
+struct msg_print {
+  const char* text;
+  size_t len;
+  int64_t bid;
+  int64_t captured;
+};
+
+// A #push of the longest prefix of rows[0..*n) that fits cap, row i taking
+// node seq seq + i; *n becomes the number of rows it holds. 0 (and *n 0) if
+// not even the first fits.
+size_t msg_push_prints(uint8_t* buf, size_t cap, const char* id, int64_t bid, int64_t mono, int64_t seq,
+                       const struct msg_print* rows, size_t* n);
 
 // A goal/apps/<name> value (MANIFEST.cddl `app`); pointers into the value.
 struct msg_app {

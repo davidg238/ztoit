@@ -4,6 +4,9 @@
 //   agent/stage       the image in staging: fetching, verified, or refused.
 //   agent/app/<name>  an image main() installed in the registry, by name.
 //
+// And the console's (addendum 2026-11-27): its ring, FCB on log_partition
+// behind console.h's seam, and the record agent/console, the last line porta acked.
+//
 // Two kinds, not one record per name moving through states, so a refused or
 // half-fetched new image never overwrites what is installed under that name.
 // Shared by agent.c and main.cc; main() writes the registry only before the
@@ -13,6 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "console.h"
 #include "stage.h"
 
 #ifdef __cplusplus
@@ -65,6 +69,13 @@ int store_app_save(const char* name, const struct store_app* app);
 // Marks agent/app/<name> unreported, so the agent pushes obs/apps/<name> again
 // (a refused new image under that name: #38). No record: nothing to say.
 void store_app_unreport(const char* name);
+
+// The console's ring, or NULL on a board without log_partition (or if FCB
+// cannot be set up on it, said on the console).
+const struct console_ring* store_console_ring(void);
+// agent/console: 0 when there is none.
+uint32_t store_console_acked_load(void);
+int store_console_acked_save(uint32_t line);
 
 // Calls fn for each agent/app/<name> record.
 typedef void (*store_app_fn)(const char* name, struct store_app* app, void* ctx);

@@ -88,5 +88,16 @@ func main() {
 		{Seq: 3, Path: "obs/vin/pm25", Kind: cval.KindCell, Value: pm25, BootID: 7, MonoMs: 65000},
 	}))
 	fmt.Printf("OBS  %s\n", hex.EncodeToString(obs))
+	// tel/print: three lines in one push, seqs 4..6. The first two were printed in
+	// boot 6 (the second is the agent's gap row), the third in this boot, 7.
+	print := func(text string) []byte {
+		return must(cval.Encode(cval.Record{Tag: "Print", Fields: cval.Map{{K: cval.Symbol("text"), V: text}}}))
+	}
+	prints := must(wire.EncodePush("a4cf12345678", 7, 70000, []space.Entry{
+		{Seq: 4, Path: "tel/print", Kind: cval.KindStream, Value: print("hello"), BootID: 6, MonoMs: 120000},
+		{Seq: 5, Path: "tel/print", Kind: cval.KindStream, Value: print("(2 lines lost)"), BootID: 6, MonoMs: 121000},
+		{Seq: 6, Path: "tel/print", Kind: cval.KindStream, Value: print("net_cycle: open 12 ms"), BootID: 7, MonoMs: 500},
+	}))
+	fmt.Printf("PRINTS %s\n", hex.EncodeToString(prints))
 	fmt.Printf("BLOB %s\n", hex.EncodeToString(blob))
 }

@@ -1,5 +1,8 @@
 /* The WROOM-1-N8 has 8 MB of flash; the board's default table uses the lower
  * 4 MB. The upper 4 MB is Toit's flash registry (flash_registry_zephyr.cc). */
+/delete-node/ &slot0_lpcore_partition;
+/delete-node/ &slot1_lpcore_partition;
+
 &flash0 {
 	partitions {
 		toit_partition: partition@400000 {
@@ -13,6 +16,13 @@
 			compatible = "zephyr,mapped-partition";
 			label = "stage";
 			reg = <0x3e0000 DT_SIZE_K(124)>;
+		};
+		/* The remote console's ring (zephyr/src/agent/store.c, FCB): where the
+		 * default table has the two lpcore slots, which ztoit does not use. */
+		log_partition: partition@3a0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "log";
+			reg = <0x3a0000 DT_SIZE_K(64)>;
 		};
 	};
 };

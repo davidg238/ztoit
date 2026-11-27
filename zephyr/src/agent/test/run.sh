@@ -1,7 +1,7 @@
 #!/bin/sh
 # Host tests of the agent's plain-C parts: the codec (zcbor, canonical) against
 # rete cval / porta wire goldens, staging (hash, ed25519, progress), and the
-# table of app observations (obs.c).
+# table of app observations (obs.c), and the remote console (console.c).
 set -e
 d=$(dirname "$0")
 z=${ZCBOR:-$HOME/zephyr-esp32/modules/lib/zcbor}
@@ -22,6 +22,11 @@ cc $f -w -c -o $o/sha256.o "$m/library/sha256.c"
 cc $f -w -c -o $o/platform_util.o "$m/library/platform_util.c"
 cc $f -o $o/stage_test $o/stage.o $o/stage_test.o $o/ed25519.o $o/sha256.o $o/platform_util.o
 cc $f -Wall -Wextra -Werror -o $o/obs_test "$d/../obs.c" "$d/obs_test.c"
+cc $f -Wall -Wextra -Werror -c -o $o/console.o "$d/../console.c"
+cc $f -Wall -Wextra -Werror -c -o $o/console_test.o "$d/console_test.c"
+cc $f -o $o/console_test $o/console.o $o/console_test.o $o/msg.o \
+  "$z/src/zcbor_common.c" "$z/src/zcbor_encode.c" "$z/src/zcbor_decode.c"
 $o/msg_test
 $o/stage_test
 $o/obs_test
+$o/console_test

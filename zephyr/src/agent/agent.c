@@ -6,7 +6,8 @@
 //   POST /space #pull  -> #batch (logged; the cursor advances)
 //   POST /space #push  -> #ack   (obs/build, once per boot, until acked;
 //                                  obs/apps/<name> after an install, until acked;
-//                                  obs/<name> after an app posts it, until acked)
+//                                  obs/<name> after an app posts it, until acked;
+//                                  tel/print, the lines printed since the last ack)
 //   GET /blob/<hash>   -> 2.05   (an image, a Block2 block at a time)
 // Install (design addendum 2026-11-17): a goal/apps/<name> row whose image is
 // not the installed one is fetched into staging across check-ins, verified,
@@ -14,12 +15,15 @@
 // Observations (design addendum 2026-11-25): an app posts an int under a name
 // (zephyr.observe, ztoit_observe) into obs.c's table, and each check-in pushes
 // every cell not yet acked. Posting does not open the network.
-// Not yet: other goals, console, safe mode.
+// Console (design addendum 2026-11-27): every line the VM prints goes to a
+// flash ring (ztoit_console, console.c), and each check-in pushes the lines
+// after the last one porta acked.
+// Not yet: other goals, safe mode.
 //
 // State: `bid` is a boot counter persisted with Zephyr settings (rete
 // PROTOCOL-NSL §5.3: porta tells a reboot from a lost ack by it); cursor, hw
 // and wak are RAM, as on an nsl node, and resync from 0 after a reboot. The
-// install state is store.h's records.
+// install state and the console's last acked line are store.h's records.
 #include <stdio.h>
 #include <string.h>
 
@@ -39,6 +43,7 @@
 #include <zephyr/net/openthread.h>
 #endif
 
+#include "console.h"
 #include "msg.h"
 #include "obs.h"
 #include "store.h"
@@ -64,7 +69,7 @@ static bool build_acked;
 static const int64_t BUILD_SEQ = 1;
 static int64_t node_seq = BUILD_SEQ;
 
-static uint8_t request[256];
+static uint8_t request[MSG_PUSH_MAX];
 static uint8_t reply[REPLY_MAX];
 static size_t reply_len;
 static int16_t reply_code;
@@ -486,6 +491,62 @@ static void push_obs(void) {
   }
 }
 
+// --- tel/print ------------------------------------------------------------------
+
+// Written from the VM thread (ztoit_console), read from the agent's (push_console).
+static K_MUTEX_DEFINE(console_lock);
+static struct console console;  // console.ring NULL until agent_start: writes are dropped
+
+// The fork's stdout and stderr primitives: every byte they write, '\n' ending
+// a line. Never prints: this is the console's own path.
+void ztoit_console(const uint8_t* bytes, size_t length) {
+  k_mutex_lock(&console_lock, K_FOREVER);
+  console_write(&console, bytes, length, k_uptime_get());
+  k_mutex_unlock(&console_lock);
+}
+
+static void start_console(void) {
+  const struct console_ring* ring = store_console_ring();
+  uint32_t acked = store_console_acked_load();
+  k_mutex_lock(&console_lock, K_FOREVER);
+  console_start(&console, ring, (uint32_t)bid, acked);
+  uint32_t next = console.next;
+  k_mutex_unlock(&console_lock);
+  if (ring) printk("agent: console ring: line %u next, %u acked\n", (unsigned)next, (unsigned)acked);
+}
+
+#define CONSOLE_PUSHES 2
+
+// Up to CONSOLE_PUSHES pushes, each as many lines as MSG_PUSH_MAX holds; the
+// first that fails ends them, and the rest ride the next check-in. A push's
+// rows take fresh node seqs, also when they are resent: porta drops a seq at or
+// under its high-water, so a resend under an old seq after a later push was
+// acked would be lost. A lost ack costs a line pushed twice instead.
+static void push_console(void) {
+  static struct console_batch batch;  // its text is MSG_PUSH_MAX: not on the agent's stack
+  for (int i = 0; i < CONSOLE_PUSHES; i++) {
+    k_mutex_lock(&console_lock, K_FOREVER);
+    console_select(&console, &batch);
+    k_mutex_unlock(&console_lock);
+    if (batch.n == 0) return;
+    size_t n = batch.n;
+    int64_t first = node_seq + 1;
+    struct msg_reply r;
+    size_t len = msg_push_prints(request, sizeof(request), id, bid, k_uptime_get(), first, batch.rows, &n);
+    if (!len) return;  // cannot be: a row of CONSOLE_LINE_MAX fits (console_test)
+    node_seq += n;
+    if (!exchange(sock, (struct sockaddr*)&porta, len, &r, NULL) || r.kind != MSG_ACK) return;
+    hw = r.hw;
+    if (hw < node_seq) return;
+    uint32_t through = batch.through[n - 1];
+    k_mutex_lock(&console_lock, K_FOREVER);
+    console_ack(&console, through);
+    k_mutex_unlock(&console_lock);
+    store_console_acked_save(through);
+    printk("agent: tel/print pushed: %u rows, through line %u\n", (unsigned)n, (unsigned)through);
+  }
+}
+
 // --- Check-in --------------------------------------------------------------------
 
 static void check_in(void) {
@@ -510,6 +571,7 @@ static void check_in(void) {
     }
     push_obs_app();
     push_obs();
+    push_console();
     fetch();
   }
   if (resync_pending) cursor = 0;
@@ -563,8 +625,9 @@ static void on_addr(struct net_mgmt_event_callback* cb, uint64_t event, struct n
 // off mid-flight (3 of 17 cycles, -EINVAL on the retransmit). Bounded: before
 // its fetch a check-in is at most CHECK_IN_EXCHANGES exchanges of TIMEOUT_MS
 // each, and a fetch stops starting blocks TIMEOUT_MS after this call (fetch).
-// The pull, obs/build, obs/apps, then each obs/<name> cell (push_obs).
-#define CHECK_IN_EXCHANGES (3 + OBS_CELLS)
+// The pull, obs/build, obs/apps, each obs/<name> cell (push_obs), then the
+// console's pushes (push_console).
+#define CHECK_IN_EXCHANGES (3 + OBS_CELLS + CONSOLE_PUSHES)
 void ztoit_link_going_down(void) {
   atomic_set(&going_down_at, (atomic_val_t)k_uptime_get());
   if (atomic_get(&owed) && k_sem_take(&settled_sem, K_MSEC(CHECK_IN_EXCHANGES * TIMEOUT_MS + 1000)) != 0) {
@@ -612,7 +675,6 @@ static void agent_main(void* a, void* b, void* c) {
     printk("agent: socket failed (%d): no check-ins\n", errno);
     return;
   }
-  count_boot();
   set_up_installs();
   coap_client_init(&client, "agent");
 #if !defined(CONFIG_NET_IPV6)
@@ -650,8 +712,12 @@ static K_KERNEL_STACK_MEMBER(agent_stack, CONFIG_TOIT_AGENT_STACK_SIZE);
 static struct k_thread agent;
 
 // main() starts the agent once the registry and the install records are
-// settled (store.h): before that it must not read or write them.
+// settled (store.h): before that it must not read or write them. The boot is
+// counted and the console started here, before the VM, so its first lines are
+// kept with this boot's id.
 void agent_start(void) {
+  count_boot();
+  start_console();
   k_thread_create(&agent, agent_stack, K_KERNEL_STACK_SIZEOF(agent_stack), agent_main, NULL, NULL, NULL,
                   K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
   k_thread_name_set(&agent, "agent");

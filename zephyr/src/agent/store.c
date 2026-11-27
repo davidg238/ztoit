@@ -3,12 +3,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zephyr/fs/fcb.h>
 #include <zephyr/kernel.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/storage/flash_map.h>
 
 #define STAGE_KEY "agent/stage"
 #define APP_DIR "agent/app"
+#define CONSOLE_KEY "agent/console"
 
 bool store_init(void) {
   int err = settings_subsys_init();
@@ -55,6 +57,86 @@ const struct stage_io* store_staging(void) {
 
 #endif
 
+// --- Console ring -----------------------------------------------------------------
+
+#if PARTITION_EXISTS(log_partition)
+
+// FCB over the board overlay's log_partition: an entry per line, and when the
+// ring is full the oldest sector is erased to make room (fcb_rotate). Called
+// with agent.c's console lock held, from the VM's print and the agent's push:
+// nothing here prints.
+// The partition's grandparent is its flash, whose erase block is a sector.
+#define LOG_SECTORS \
+  (PARTITION_SIZE(log_partition) / DT_PROP(DT_GPARENT(DT_NODELABEL(log_partition)), erase_block_size))
+#define LOG_MAGIC 0x7a636f6e  // "zcon"
+static struct flash_sector log_sectors[LOG_SECTORS];
+static struct fcb log_fcb = {.f_magic = LOG_MAGIC, .f_sectors = log_sectors};
+// An entry, its tail padded to the flash's write block (fcb's f_align).
+static uint8_t log_buf[CONSOLE_ENTRY_MAX + 8] __aligned(8);
+
+static int log_append(void* ctx, const void* entry, size_t len) {
+  struct fcb_entry loc;
+  int err = fcb_append(&log_fcb, len, &loc);
+  if (err == -ENOSPC) {
+    err = fcb_rotate(&log_fcb);
+    if (err == 0) err = fcb_append(&log_fcb, len, &loc);
+  }
+  if (err != 0) return err;
+  size_t padded = ROUND_UP(len, log_fcb.f_align);
+  memcpy(log_buf, entry, len);
+  memset(log_buf + len, log_fcb.f_erase_value, padded - len);
+  err = flash_area_write(log_fcb.fap, FCB_ENTRY_FA_DATA_OFF(loc), log_buf, padded);
+  if (err != 0) return err;
+  return fcb_append_finish(&log_fcb, &loc);
+}
+
+static int log_walk(void* ctx, console_entry_fn fn, void* arg) {
+  struct fcb_entry loc = {0};
+  int err;
+  while ((err = fcb_getnext(&log_fcb, &loc)) == 0) {
+    if (loc.fe_data_len > CONSOLE_ENTRY_MAX) continue;  // not one of ours
+    err = flash_area_read(log_fcb.fap, FCB_ENTRY_FA_DATA_OFF(loc), log_buf, loc.fe_data_len);
+    if (err != 0) return err;
+    if (!fn(arg, log_buf, loc.fe_data_len)) return 0;
+  }
+  return err == -ENOTSUP ? 0 : err;  // -ENOTSUP: past the last entry
+}
+
+static const struct console_ring log_ring = {log_append, log_walk, NULL};
+
+// The partition held something else before (on the C6 and the ESP32, the
+// default table's lpcore slots): FCB refuses sectors it did not write, so the
+// partition is erased once and set up again.
+const struct console_ring* store_console_ring(void) {
+  uint32_t count = LOG_SECTORS;
+  int err = flash_area_get_sectors(PARTITION_ID(log_partition), &count, log_sectors);
+  if (err == 0) {
+    log_fcb.f_sector_cnt = count;
+    err = fcb_init(PARTITION_ID(log_partition), &log_fcb);
+  }
+  if (err == -ENOMSG) {
+    printk("agent: log_partition is not a console ring: erased\n");
+    const struct flash_area* area;
+    err = flash_area_open(PARTITION_ID(log_partition), &area);
+    if (err == 0) err = flash_area_erase(area, 0, area->fa_size);
+    if (err == 0) err = fcb_init(PARTITION_ID(log_partition), &log_fcb);
+  }
+  if (err != 0) {
+    printk("agent: console ring unavailable (%d): no remote console\n", err);
+    return NULL;
+  }
+  return &log_ring;
+}
+
+#else
+
+const struct console_ring* store_console_ring(void) {
+  printk("agent: no log_partition: no remote console\n");
+  return NULL;
+}
+
+#endif
+
 // --- Records ----------------------------------------------------------------------
 
 struct exact {
@@ -85,6 +167,16 @@ int store_stage_save(const struct store_stage* stage) {
 
 int store_stage_clear(void) {
   return settings_delete(STAGE_KEY);
+}
+
+uint32_t store_console_acked_load(void) {
+  uint32_t line = 0;
+  if (!load(CONSOLE_KEY, &line, sizeof(line))) line = 0;
+  return line;
+}
+
+int store_console_acked_save(uint32_t line) {
+  return settings_save_one(CONSOLE_KEY, &line, sizeof(line));
 }
 
 static void app_key(char* key, size_t cap, const char* name) {

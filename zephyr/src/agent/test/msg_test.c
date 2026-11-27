@@ -28,6 +28,9 @@ static const char GOLD_push_app_erased[] = "d81b82d8276470757368a4d8276269646c61
 static const char GOLD_push_app_refused[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186026e6f62732f617070732f68656c6c6f02d81b82d827664170704f6273a2d82765696d616765d81b82d82767426c6f62526566a2d827646861736858201783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486d8276473697a65190258d827696c6966656379636c65d8276772656675736564071a00011170d827646d6f6e6f1a00011170";
 // wire.EncodePush of obs/vin/pm25 = 37, seq 3: the row captured at 65000, the message sent at 70000.
 static const char GOLD_push_obs[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748186036c6f62732f76696e2f706d32350218250719fde8d827646d6f6e6f1a00011170";
+// wire.EncodePush of three tel/print rows, seqs 4..6: two printed in boot 6 (the
+// second the agent's gap row), one in boot 7, the message sent at 70000 of boot 7.
+static const char GOLD_push_prints[] = "d81b82d8276470757368a4d8276269646c613463663132333435363738d8276362696407d82763656e748386046974656c2f7072696e7401d81b82d827655072696e74a1d82764746578746568656c6c6f061a0001d4c086056974656c2f7072696e7401d81b82d827655072696e74a1d82764746578746e2832206c696e6573206c6f737429061a0001d8a886066974656c2f7072696e7401d81b82d827655072696e74a1d8276474657874756e65745f6379636c653a206f70656e203132206d73071901f4d827646d6f6e6f1a00011170";
 static const char HASH[] = "1783f1f6842889ff855d25b6d45d33dd7401ffa94eb93704f6a374c264cde486";
 static const char SIG[] = "d5e06ad84a21acbc1a10ea63faf4277b384d8157a38b4ffc3f1319db87011ceb3f08157402bc0288d1f8506a5b73fae4c2ad70097c085edd3cf8dd678e34bf01";
 
@@ -113,6 +116,23 @@ int main(void) {
   same("push(obs/vin/pm25 = 37) encodes as wire.EncodePush", buf, n, GOLD_push_obs);
   check("push(obs/<name>) into a short buffer answers 0",
         msg_push_obs(buf, 40, "a4cf12345678", 7, 70000, 3, "vin/pm25", 37, 65000) == 0);
+
+  const struct msg_print prints[] = {
+      {"hello", 5, 6, 120000},
+      {"(2 lines lost)", 14, 6, 121000},
+      {"net_cycle: open 12 ms", 21, 7, 500},
+  };
+  size_t rows = 3;
+  n = msg_push_prints(buf, sizeof buf, "a4cf12345678", 7, 70000, 4, prints, &rows);
+  same("push(3 x tel/print) encodes as wire.EncodePush", buf, n, GOLD_push_prints);
+  check("all three rows rode", rows == 3);
+  size_t two = msg_push_prints(buf, sizeof buf, "a4cf12345678", 7, 70000, 4, prints, &(size_t){2});
+  rows = 3;
+  n = msg_push_prints(buf, two, "a4cf12345678", 7, 70000, 4, prints, &rows);
+  check("a buffer one row short takes the rows that fit", rows == 2 && n == two);
+  rows = 3;
+  check("a buffer short of one row takes none",
+        msg_push_prints(buf, 40, "a4cf12345678", 7, 70000, 4, prints, &rows) == 0 && rows == 0);
 
   struct msg_app a;
   n = unhex(GOLD_app, in);

@@ -313,3 +313,52 @@ Where the build differs from the addendum above, and why. Evidence is on #31.
 - **Needs rete.** porta's manifest gate acks a row whose path has no rule but does not apply it
   (`porta/internal/space/store.go`, "refused-but-kept"): `obs/vin/pm25` needs a rule in rete's
   `protocol/MANIFEST.cddl` (`kind=cell class=routine dir=up`, value `int`) before porta stores it.
+
+## Addendum 2026-11-27: the remote console (#54)
+
+§8 "Console" built as a first slice. Three points differ from §8 and §6 and are marked **changed**.
+
+- **The rule:** every line a Toit program prints is appended to a flash ring with a line number that never
+  resets; at each check-in the agent pushes the lines after the last number porta acked.
+- **Path: `tel/print`, not `tel/log` (changed).** rete's manifest gives `tel/log` a level (`lvl`, `txt`) and
+  `tel/print` a bare `text`. VM output has no level, so it is `tel/print`, one stream row per line. The rule is
+  already in the manifest porta runs; no rete change. `tel/log` stays free for a levelled logger.
+- **Capture point: the stdout and stderr primitives** (`write_on_std` in the fork's `primitive_core.cc`), through
+  a weak hook as `ztoit_observe` is: the fork calls `ztoit_console(bytes, length)`, the agent supplies it. It
+  sees every `print` of every app and of the system program, and Toit's uncaught-exception traces. It does
+  not see C output: the agent's own lines, VM `FATAL`s, Zephyr logs. Those wait for `sys/panic` (§8 "Crash").
+  The line still goes to the serial console as today.
+- **The ring: Zephyr FCB on `log_partition`**, written at each line, no RAM stage (§8). An entry is the line
+  number, the boot id and uptime at capture, and the text. A line longer than `CONSOLE_LINE_MAX` is cut, and the
+  cut is marked in the text. At boot the agent reads the last entry's number and continues from it.
+- **What is acked:** the settings record `agent/console` holds the last line number porta acked. It is saved
+  after an acked push that carried lines, so a quiet node writes nothing.
+- **Push.** Rows go several to a `#push`, up to the protocol's 512 B (PROTOCOL-NSL §5.3), at most
+  `CONSOLE_PUSHES` pushes per check-in, after the `obs` cells. Each row carries its capture origin (boot id, uptime at the line's end), so
+  lines from before a reboot arrive with the boot they were printed in. What does not fit rides the next check-in.
+- **Seqs (changed from the first draft).** A resent row takes a fresh node seq, unlike a cell: porta drops a seq
+  at or under its high-water, so a resend under its old seq after a later push was acked would be lost and
+  counted acked (#55). The cost is a line stored twice when an ack is lost.
+- **The gap.** When the ring rotates over lines that were not acked they are lost. The agent sees it as a jump
+  in line numbers and pushes one row `(N lines lost)` in their place. No counter is kept: the numbers are the
+  record, and they survive a reboot.
+- **Boards (changed: not all at once).** ESP32-C6 and ESP32: `log_partition` is 64 KB at `0x3a0000`, which
+  neither uses today. nRF52840 and nRF54L15 have no `log_partition` yet: there `ztoit_console` does nothing.
+  Reason to wait on the nRF52840: its flash is rated for far fewer erase cycles (see "Cost").
+- **Cost.**
+  - Flash wear: the ring is erased once per 64 KB printed. The Vindriktning app prints about a line every 5 s;
+    measure its bytes per day on the bench before it runs for months.
+  - A sector erase on Espressif parts blocks interrupts that are not in IRAM for tens of milliseconds, once per
+    4 KB of output. The Vindriktning's UART RX is the exposed party: check its dropped-byte count.
+  - Each check-in may add `CONSOLE_PUSHES` exchanges, so `ztoit_link_going_down`'s bound grows again (#56).
+  - A line printed while the agent holds the ring's lock waits for it.
+- **Not in this slice:** `sys/panic` and Zephyr faults; C-side output; the nRF boards; a way to turn capture off
+  per app; `obs/health`.
+- **Bench.** The C6 on Thread first (it is on the bench). The Vindriktning node is on wall power and has no
+  firmware update over the air, so it gets the console when it next visits the bench.
+- **As built 2026-11-27.** The boot is counted before the VM starts, so the first lines carry this boot's id. A
+  byte that is not valid UTF-8 is stored as `?` (porta refuses such a text, and one bad line would stall the
+  console). Shown on the C6: lines in porta in order; a reset carries unpushed lines across with their old boot
+  id; a flood of 1000 lines gives one `(228 lines lost)` row. Measured there: +4.8 KB flash, +1.8 KB RAM; about
+  450 KB written a day by `net_cycle` and `hello31`, seven ring rotations; printing costs about 2% over the UART.
+  Not shown: the cut on hardware, the ESP32's UART drop count, a ring partition that held other data.
