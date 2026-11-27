@@ -13,7 +13,7 @@
 // not the installed one is fetched into staging across check-ins, verified,
 // and the node reboots; main() installs it into the registry before the VM.
 // Observations (design addendum 2026-11-25): an app posts an int under a name
-// (zephyr.observe, ztoit_observe) into obs.c's table, and each check-in pushes
+// (ztoit.observe, ztoit_observe) into obs.c's table, and each check-in pushes
 // every cell not yet acked. Posting does not open the network.
 // Console (design addendum 2026-11-27): every line the VM prints goes to a
 // flash ring (ztoit_console, console.c), and each check-in pushes the lines
@@ -461,7 +461,7 @@ static void push_obs_app(void) {
 static K_MUTEX_DEFINE(obs_lock);
 static struct obs_table obs;
 
-// The fork's zephyr.observe primitive: 0, -EINVAL, -ENOSPC (obs_post).
+// The fork's ztoit.observe primitive: 0, -EINVAL, -ENOSPC (obs_post).
 int ztoit_observe(const uint8_t* name, size_t length, int64_t value) {
   k_mutex_lock(&obs_lock, K_FOREVER);
   int err = obs_post(&obs, (const char*)name, length, value, k_uptime_get());

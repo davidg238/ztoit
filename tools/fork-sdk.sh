@@ -1,7 +1,7 @@
 #!/bin/sh
 # Make the host SDK that compiles ztoit programs: stock v2.0.0 binaries with the
 # toit fork's lib/ (symlinked), so library changes on zephyr-port take effect,
-# and the fork's toit.compile, built here, which knows the `zephyr` primitives.
+# and the fork's toit.compile, built here, which knows the `ztoit` primitives.
 # Binaries are copied, not linked: the compiler finds its lib next to its real path.
 # bin/toit is a wrapper: `version` prints tools/sdk-id.sh as of now, the commit
 # this toit.compile is built from (ztoit#24); all else runs the stock bin/toit.real.

@@ -25,9 +25,9 @@
 	};
 };
 
-/* The IMU (LSM6DS3TR-C) is driven from Toit over I2C (zephyr.I2c "i2c30"), so
+/* The IMU (LSM6DS3TR-C) is driven from Toit over I2C (ztoit.I2c "i2c30"), so
  * Zephyr's own driver is off and does not claim the chip or its INT1 pin. INT1
- * (P0.02) is a gpio-keys child: zephyr.Key "imu_int1" wakes a Toit task on it. */
+ * (P0.02) is a gpio-keys child: ztoit.Key "imu_int1" wakes a Toit task on it. */
 &lsm6ds3tr_c {
 	status = "disabled";
 };

@@ -45,7 +45,7 @@ A port spike: the [Toit](https://toitlang.org) v2.0.0 virtual machine running as
 - **At least as fast as stock Toit** on a simple benchmark ([STIC](https://github.com/davidg238/performance_stic), same ESP32-C6, v2.0.0 both sides):
   interpreter-bound rows match, allocation-heavy rows are 1.2–2.2× faster (cause not yet measured, #2).
   STIC on all three CPUs: `spike/step4/`.
-- **Peripherals come from Zephyr's drivers**, named by devicetree label, not Toit rewrites: `import zephyr`
+- **Peripherals come from Zephyr's drivers**, named by devicetree label, not Toit rewrites: `import ztoit`
   (`Sensor`, `Led`, `LedStrip`, `Key`), one primitive module generic over Zephyr's device classes (#7). On the
   C6: a BMP180 over I2C, the BOOT button (debounced input events), an output pin and the on-board RGB LED;
   BOOT and the RGB LED need no wiring. On the nRF54L15: the LED, the PDM microphone (`Microphone`), an LC3

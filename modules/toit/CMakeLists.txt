@@ -12,7 +12,7 @@ if(CONFIG_TOIT)
     "/(toit|toit_run|toit_run_image|vessel|run|main_utf_8_helper|error_win|toit_esp32|toit_ec618)\\.cc$")
   list(APPEND toit_core ${T}/event_sources/timer.cc ${T}/resources/timer.cc
     ${T}/event_sources/zsock_zephyr.cc ${T}/resources/udp_zephyr.cc ${T}/resources/tcp_zephyr.cc
-    ${T}/event_sources/zephyr_keys.cc ${T}/resources/zephyr.cc
+    ${T}/event_sources/zephyr_keys.cc ${T}/resources/ztoit.cc
     ${T}/event_sources/ble_udp_zephyr.cc ${T}/resources/udp_ble.cc
     ${T}/resources/image.cc)
   set(toit_gc

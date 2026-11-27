@@ -41,6 +41,10 @@ meaning: `TOIT_ZEPHYR` (and the `mutex.h` branches), `MODULE_ZEPHYR` in `primiti
 imports). The file collisions resolve as "keep ours". The module name is the one with a cost: a rename touches
 the primitive module, the library and one import line per app.
 
+**2026-11-27: renamed.** ztoit's module and library are now `ztoit` (`MODULE_ZTOIT`, `lib/ztoit.toit`, `import ztoit`),
+so `MODULE_ZEPHYR` and `import zephyr` no longer collide. The file collisions and `TOIT_ZEPHYR` remain. Text above
+this line, and older design docs, say `zephyr` for the same module.
+
 ## Reviewed 2026-11-26
 
 **Flash writes on nRF: sound as built.** Upstream's journal exists because Nordic's NVMC limits how often a word
