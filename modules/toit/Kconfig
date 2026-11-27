@@ -17,6 +17,28 @@ config TOIT
 	  security config makes those symbols promptless, and a conf line is then
 	  ignored (ztoit #47).
 
+config TOIT_CRYPTO
+	bool "The VM's crypto primitives: SHA-1/2, AES, AES-GCM, ChaCha20-Poly1305"
+	depends on TOIT
+	select PSA_WANT_ALG_SHA_224
+	select PSA_WANT_ALG_SHA_384
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_ECB_NO_PADDING
+	select PSA_WANT_ALG_CBC_NO_PADDING
+	select PSA_WANT_ALG_GCM
+	select PSA_WANT_KEY_TYPE_CHACHA20
+	select PSA_WANT_ALG_CHACHA20_POLY1305
+	help
+	  Compiles primitive_crypto.cc (Toit's `crypto` module 15). Off on
+	  the boards for flash. RSA and EC keys answer UNIMPLEMENTED on
+	  Mbed TLS 4, and tls and x509 are not built on the port (ztoit#61).
+
+config TOIT_CRYPTO_EXTRA
+	bool "Blake2s and SipHash (the VM's own code, no Mbed TLS)"
+	depends on TOIT_CRYPTO
+	help
+	  As the ESP32 build's knob of the same name.
+
 config ZVFS_EVENTFD_ADD_SIZE_TOIT
 	int "eventfds the VM's socket event source needs"
 	default 1
@@ -47,6 +69,14 @@ config TOIT_HEAP_NOINIT
 	help
 	  On the ESP32 with ESP32_REGION_1_NOINIT this moves the arena to the
 	  second DRAM bank, leaving the first to the C heap.
+
+config TOIT_LINK_IP
+	bool "net.open takes the IP interface Zephyr brings up itself"
+	depends on TOIT && NET_SOCKETS && !NET_L2_OPENTHREAD && !WIFI
+	help
+	  Loopback or Ethernet with a static address (NET_CONFIG_SETTINGS),
+	  as in the QEMU test runs (ztoit#61): net.open and close leave the
+	  interface alone. Without a link in the build net.open throws.
 
 config TOIT_THREAD_DOWN_DETACH
 	bool "Thread down = disabled"
