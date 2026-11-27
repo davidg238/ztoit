@@ -32,11 +32,13 @@ extern "C" void agent_start(void);
 #endif
 
 // A relocatable image in flash (zephyr/CMakeLists.txt). flags is the
-// allocation's metadata[0].
+// allocation's metadata[0], tag its metadata[1..4] (the container image's
+// `data`; a test's number in tests/qemu runs, else 0).
 struct Image {
   const unsigned char* data;
   unsigned size;
   uint8_t flags;
+  uint32_t tag;
 };
 static const uint8_t FLAG_RUN_BOOT = 1;  // ContainerService.FLAG-RUN-BOOT: the containers
 #include "images.inc"
@@ -92,7 +94,7 @@ static bool installed_at(const Image& image, word offset) {
 
 // Writes the image at offset, header last (commit): only a complete write is
 // valid. Answers the program, or null if the source or the flash failed.
-static const Program* install_image(const ImageSource& source, word offset, uint8 flags) {
+static const Program* install_image(const ImageSource& source, word offset, uint8 flags, uint32 tag = 0) {
   word relocated = (source.size / CHUNK_WORD_SIZE) * WORD_BIT_SIZE;
   word allocation = allocation_size(source.size);
   int64 start = k_uptime_get();
@@ -116,6 +118,7 @@ static const Program* install_image(const ImageSource& source, word offset, uint
   if (!read_header(source, &source_header)) return null;
   uint8 metadata[FlashAllocation::Header::METADATA_SIZE] = { 0 };
   metadata[0] = flags;
+  for (int i = 0; i < 4; i++) metadata[1 + i] = static_cast<uint8>(tag >> (8 * i));  // little endian, as image_writer.toit
   const FlashAllocation::Header header(image.begin(), FLASH_ALLOCATION_TYPE_PROGRAM,
                                        source_header.get()->id(), source_header.get()->size(), metadata);
   if (!FlashAllocation::commit(image.begin(), source_header.get()->size(), &header)) {
@@ -151,7 +154,7 @@ static const Program* install_images(word* end) {
     printf("ztoit: registry erased: installed apps come back from porta's goals\n");
 #endif
     for (word i = 0, offset = 0; i < IMAGE_COUNT; offset += allocation_size(images[i].size), i++) {
-      if (install_image(firmware_source(images[i]), offset, images[i].flags) == null) FATAL("install failed");
+      if (install_image(firmware_source(images[i]), offset, images[i].flags, images[i].tag) == null) FATAL("install failed");
     }
   }
   *end = total;

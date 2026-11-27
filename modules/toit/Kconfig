@@ -32,6 +32,15 @@ config TOIT_HEAP_SIZE
 	default 163840
 	depends on TOIT
 
+config TOIT_RAM_REGISTRY_SIZE
+	int "Bytes in the RAM flash registry (boards without a toit_partition)"
+	default 131072
+	depends on TOIT
+	help
+	  Without a toit_partition the registry is a static RAM array that
+	  holds every installed program. The QEMU test runs (tests/qemu) hold
+	  hundreds of test programs.
+
 config TOIT_HEAP_NOINIT
 	bool "Put the arena in .noinit"
 	depends on TOIT
