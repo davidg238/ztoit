@@ -32,6 +32,9 @@ Started 2026-11-26. Fork: toit `wip-plan2-fix-a` (pushed as `zephyr-port`), base
 | Mbed TLS | Toit's own copy; threading, time and entropy hooks in `os_zephyr.cc` | Zephyr's module | |
 | Deployment | firmware envelopes, deploy over the debug probe | agent over CoAP (nodus-toit design), faber | |
 
+2026-11-27: Toit's `gpio`, `i2c`, `uart` and `spi` are being added beside the device module, on pins fixed by
+devicetree (zephyr-port.md, addendum 2026-11-27, #62).
+
 ## Collisions
 
 Same path, different content: `src/os_zephyr.cc`, `src/flash_registry_zephyr.cc`, `src/vm_zephyr.cc`,

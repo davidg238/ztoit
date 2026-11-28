@@ -214,3 +214,61 @@ What 4.5 broke, and the fix (each one line in the code it touches):
 - **Two statements at the top of this document are superseded by the code.** The current `Thread*` is found from
   `k_current_get()`, not kept in k_thread custom data (Espressif's WiFi adapter owns that slot). Toit heap pages
   come from a static arena with a page map, not `sys_heap` (`os_zephyr.cc`, both with their reasons).
+
+## Addendum 2026-11-27: Toit's standard `gpio`, `i2c`, `uart` and `spi` libraries (#62)
+
+Goal: a Toit package written against `gpio.Pin`, `i2c.Bus`/`i2c.Device`, `uart.Port` or `spi.Bus`/`spi.Device`
+runs on the port unchanged. The `ztoit` device API (by devicetree label) stays beside it; this is the "thin
+shims" line of the 2026-11-14 peripherals addendum, built.
+
+**Rules**
+
+- **A pin number is 32 × port + pin**, the numbering upstream's Zephyr port uses. On Espressif that is the GPIO
+  number; on Nordic P0.x is x and P1.x is 32 + x.
+- **The board says which pins Toit may take.** A `toit,platform` node lists the GPIO controllers in order
+  (`gpio-ports`) and the pins that need `--allow-restricted` (`reserved-pins`): flash, console, strapping pins,
+  and every pin a devicetree device already owns (LEDs, keys, a sensor's bus). Same binding and property names as
+  upstream's port, so a board file means the same thing in both.
+- **A bus is opened by naming the pins the board gave it.** Pin routing is devicetree's (`pinctrl`), fixed per
+  hardware revision. A `ztoit,buses` node holds one child per controller Toit may open: the controller's phandle
+  and its pin numbers (`sda`/`scl`, `tx`/`rx`, `clock`/`mosi`/`miso`). `i2c.Bus --sda=(gpio.Pin 6) --scl=(gpio.Pin 7)`
+  finds the controller whose child says 6 and 7; any other pair throws `INVALID_ARGUMENT`. The library sources
+  are not changed.
+- **No primitive without the node.** The modules compile to their primitives only when the devicetree has the
+  node (`DT_HAS_COMPAT_STATUS_OKAY`); otherwise every primitive fails `UNSUPPORTED`, as now. No new Kconfig option.
+
+**Per library**
+
+| Library | Backing | Notes |
+|---|---|---|
+| `gpio` | `gpio_pin_configure`, `gpio_pin_get_raw`/`set_raw`, a `gpio_callback` on both edges | upstream's `gpio_zephyr.cc`, `pins_zephyr.*`, `event_sources/zephyr.*` and `zephyr_error` taken as they are (they use only Zephyr's generic GPIO API); needs `CONFIG_GPIO_GET_CONFIG` |
+| `i2c` | `i2c_configure` + `i2c_transfer` on the matched controller | controller role only; target role stays `UNIMPLEMENTED`. 7-bit addresses, 100 and 400 kHz |
+| `uart` | interrupt-driven API: RX into a per-port ring, TX from the caller's buffer through the TX-ready interrupt | replaces the single global ring of `ztoit.Uart`, which then becomes a wrapper or goes; no RTS/CTS, no RS-485 at first |
+| `spi` | `spi_transceive` on the matched controller | chip select is any `gpio.Pin`, driven by the primitive around the transfer, so Zephyr needs no patch for a run-time CS |
+
+**Transfers run on the VM thread.** `device_transfer_start` does the whole I2C or SPI transfer and posts the
+"done" event; `finish` hands back the result. Upstream's port gives each bus a worker thread instead. Not done
+here because a thread costs a stack on the nRF52840, and `ztoit.I2c` has transferred inline since 2026-11-19
+without trouble. Cost: all Toit tasks stop for the length of a transfer, and on a stuck bus for the driver's own
+timeout. A long SPI transfer (a display frame) is the case that would earn the worker thread; measure first.
+
+**What this does not do**
+
+- **Pins are not re-routed at run time.** Upstream's port does that for Nordic parts through `pinctrl`'s dynamic
+  states; the pin encoding is per SoC family, and this port has three. A program that picks pins the board did
+  not route fails at `Bus` construction, with the error above.
+- **ADC, PWM, DAC, touch, pulse counter, RMT, I2S**: not in this issue. ADC and PWM are the next two if a real
+  project asks.
+- **The pin table can drift from `pinctrl`**: both are written by the board's author. The table only selects a
+  controller, so a wrong entry opens the right bus under the wrong pin numbers; it cannot move a signal.
+
+**Proof**
+
+- Under `qemu_riscv32` with Zephyr's emulators (`zephyr,gpio-emul`, `zephyr,i2c-emul-controller` with an emulated
+  target, `zephyr,uart-emul`, `zephyr,spi-emul-controller`) in the #61 harness: Toit tests written against the
+  standard libraries. GPIO needs two emulated pins joined by a few lines of test-only C.
+- On a board: the C6 with a jumper between two free pins (edges, pulls) and the BMP180 already on its `i2c0`,
+  read through `i2c.Bus` by an unmodified Toit driver package.
+- Each stage reports flash and RAM against the build before it, for the C6 and the nRF52840 dongle.
+
+**Order:** `gpio`, `i2c`, `uart`, `spi`; one fork commit and one ztoit commit per stage.
