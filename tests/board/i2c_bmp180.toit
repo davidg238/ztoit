@@ -42,25 +42,21 @@ main:
     expect (bus.test BMP180)
     bus.close
   print "reopen ok"
+  pin-objects
   print "I2C-BMP180 PASS"
-  pin-form
 
-// Not a pass condition: the deprecated form, Pins the program opened (with
-// --allow-restricted, as the bus pins are reserved). Shows whether a Pin's
-// own GPIO configuration disturbs the pins' I2C routing, and whether closing
-// the Pins (which disconnects them) leaves the bus usable.
-pin-form:
-  sda := gpio.Pin SDA --allow-restricted
-  scl := gpio.Pin SCL --allow-restricted
-  bus := i2c.Bus --sda=sda --scl=scl --frequency=100_000
-  print "pin-form: scan with Pins $(bus.scan.map: "0x$(%02x it)")"
-  bus.close
-  sda.close
-  scl.close
-  bus = i2c.Bus --sda=SDA --scl=SCL --frequency=100_000
-  print "pin-form: scan after the Pins closed $(bus.scan.map: "0x$(%02x it)")"
-  bus.close
-  sensor "after the Pins closed"
+// A bus takes pin numbers only; a gpio.Pin is refused before the pins are
+// matched. No Pin is made on a bus pin: making and closing one disconnects
+// it, and the controller then stays dead until reboot. Two free pins stand
+// in; the Pins are closed before anything else runs.
+pin-objects:
+  a := gpio.Pin 2 --input
+  b := gpio.Pin 11 --input
+  error := catch: i2c.Bus --sda=a --scl=b
+  a.close
+  b.close
+  expect-equals "INVALID_ARGUMENT" error
+  print "pin objects refused ok"
 
 check device/i2c.Device label/string:
   registers := device.registers

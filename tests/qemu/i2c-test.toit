@@ -40,10 +40,10 @@ test-pins:
     // One open bus per controller.
     expect-equals "ALREADY_IN_USE" (catch: open)
     // The bus holds its pins, also against --allow-restricted.
-    expect-equals "ALREADY_IN_USE" (catch: gpio.Pin SDA --allow-restricted)
+    expect-equals "ALREADY_IN_USE" (catch: gpio.Pin SDA --allow-restricted --input)
     expect-equals "ALREADY_IN_USE" (catch: gpio.Pin SCL --allow-restricted --input)
     // Without the flag a bus pin is restricted, as on a board.
-    expect-equals "RESTRICTED_PIN" (catch: gpio.Pin SDA)
+    expect-equals "RESTRICTED_PIN" (catch: gpio.Pin SDA --input)
   finally:
     bus.close
 
@@ -124,18 +124,20 @@ test-device-options:
   finally:
     bus.close
 
-// The deprecated form: Pins the program opened, with --allow-restricted as a
-// bus pin is reserved. The bus uses them and leaves them to their owner.
+// Pins are numbers only: a gpio.Pin, even on the bus's own pins, is refused
+// (on a board, closing it would disconnect the bus pin). The emulated pins
+// can take a Pin without harm.
 test-pin-objects:
-  sda := gpio.Pin SDA --allow-restricted
-  scl := gpio.Pin SCL --allow-restricted
-  bus := i2c.Bus --sda=sda --scl=scl --frequency=100_000
-  expect (bus.test EEPROM)
-  bus.close
-  // Still the program's: the bus did not release them.
-  expect-equals "ALREADY_IN_USE" (catch: gpio.Pin SDA --allow-restricted)
+  sda := gpio.Pin SDA --allow-restricted --input
+  scl := gpio.Pin SCL --allow-restricted --input
+  expect-equals "INVALID_ARGUMENT" (catch: i2c.Bus --sda=sda --scl=scl --frequency=100_000)
+  expect-equals "INVALID_ARGUMENT" (catch: i2c.Bus --sda=SDA --scl=scl --frequency=100_000)
   sda.close
   scl.close
+  // The refused bus claimed nothing.
+  bus := open
+  expect (bus.test EEPROM)
+  bus.close
 
 test-target:
   expect-equals "UNIMPLEMENTED" (catch: i2c.Target --sda=SDA --scl=SCL --address=0x42)
@@ -145,7 +147,7 @@ test-close-reopen:
   bus.close
   expect-equals "CLOSED" (catch: bus.test EEPROM)
   // Closed: the pins are free.
-  pin := gpio.Pin SDA --allow-restricted
+  pin := gpio.Pin SDA --allow-restricted --input
   pin.close
   3.repeat:
     bus = open
