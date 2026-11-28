@@ -65,6 +65,19 @@
 		reserved-pins = <3 4 5 6 7 8 9 12 13 15 16 17 24 25 26 27 28 29>;
 	};
 
+	/* The controllers Toit's standard libraries may open (#62), by the pins
+	 * the board's pinctrl routes: i2c.Bus --sda=6 --scl=7 is i2c0 (board
+	 * pinctrl i2c0_default), shared with the BMP180 below. A bus's pins stay
+	 * in reserved-pins: they are not for gpio.Pin. */
+	ztoit-buses {
+		compatible = "ztoit,buses";
+		i2c0 {
+			controller = <&i2c0>;
+			sda = <6>;
+			scl = <7>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		do0: do_0 {

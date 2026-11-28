@@ -1,7 +1,11 @@
 /* QEMU test build (ztoit#61, #62): two emulated GPIO controllers for Toit's
  * standard gpio library, so pin numbers 0..7 are port 0 and 32..39 port 1
  * (32 x port + pin, the toit,platform rule). tests/qemu/gpio-join.c wires
- * pin 0 to pin 33; tests/qemu/gpio-test.toit uses them. */
+ * pin 0 to pin 33; tests/qemu/gpio-test.toit uses them.
+ * An emulated I2C controller with an AT24 EEPROM emulator at 0x50, which
+ * Toit's i2c library opens on pins 4 (sda) and 5 (scl): an emulated bus has
+ * no pins, so these numbers stand for a board's pinctrl routing.
+ * tests/qemu/i2c-test.toit uses it. */
 / {
 	gpio_emul0: gpio-emul-0 {
 		compatible = "zephyr,gpio-emul";
@@ -26,8 +30,36 @@
 	toit-platform {
 		compatible = "toit,platform";
 		gpio-ports = <&gpio_emul0 &gpio_emul1>;
-		/* Stands for a board's flash or console pin: needs --allow-restricted. */
-		reserved-pins = <7>;
+		/* 7 stands for a board's flash or console pin: needs
+		 * --allow-restricted. 4 and 5 are the I2C bus's, as on a board. */
+		reserved-pins = <4 5 7>;
+	};
+
+	i2c_emul0: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		status = "okay";
+		clock-frequency = <100000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x100 4>;
+
+		eeprom@50 {
+			compatible = "atmel,at24";
+			reg = <0x50>;
+			size = <256>;
+			pagesize = <8>;
+			address-width = <8>;
+			timeout = <5>;
+		};
+	};
+
+	ztoit-buses {
+		compatible = "ztoit,buses";
+		i2c0 {
+			controller = <&i2c_emul0>;
+			sda = <4>;
+			scl = <5>;
+		};
 	};
 
 	zephyr,user {

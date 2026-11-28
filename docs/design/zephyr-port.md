@@ -231,7 +231,7 @@ shims" line of the 2026-11-14 peripherals addendum, built.
   upstream's port, so a board file means the same thing in both.
 - **A bus is opened by naming the pins the board gave it.** Pin routing is devicetree's (`pinctrl`), fixed per
   hardware revision. A `ztoit,buses` node holds one child per controller Toit may open: the controller's phandle
-  and its pin numbers (`sda`/`scl`, `tx`/`rx`, `clock`/`mosi`/`miso`). `i2c.Bus --sda=(gpio.Pin 6) --scl=(gpio.Pin 7)`
+  and its pin numbers (`sda`/`scl`, `tx`/`rx`, `clock`/`mosi`/`miso`). `i2c.Bus --sda=6 --scl=7`
   finds the controller whose child says 6 and 7; any other pair throws `INVALID_ARGUMENT`. The library sources
   are not changed.
 - **No primitive without the node.** The modules are compiled and linked only when the devicetree has the node
@@ -243,7 +243,7 @@ shims" line of the 2026-11-14 peripherals addendum, built.
 | Library | Backing | Notes |
 |---|---|---|
 | `gpio` | `gpio_pin_configure`, `gpio_pin_get_raw`/`set_raw`, a `gpio_callback` on both edges | upstream's `gpio_zephyr.cc`, `pins_zephyr.*`, `event_sources/zephyr.*` and `zephyr_error` taken as they are, with one change: the resource remembers the flags it last configured instead of asking the driver (`gpio_pin_get_config`), which Zephyr 4.5's Espressif GPIO driver does not implement. A claimed pin has one configurer, so the remembered flags are the pin's flags (the initial-level bits are not remembered, so a later `set-pull` keeps the current level) |
-| `i2c` | `i2c_configure` + `i2c_transfer` on the matched controller | controller role only; target role stays `UNIMPLEMENTED`. 7-bit addresses, 100 and 400 kHz |
+| `i2c` | `i2c_configure` + `i2c_transfer` on the matched controller | controller role only; target role stays `UNIMPLEMENTED`. 7-bit addresses, 100 and 400 kHz. A `ztoit,buses` child is I2C when it names `sda` and `scl`. The bus claims its pins without the `reserved-pins` check (the child is the board's grant) and releases them without reconfiguring, so pinctrl keeps routing them for the next open and for a devicetree device on the same controller. A `gpio.Pin` argument (deprecated) is used, not claimed; on a reserved pin it needs `--allow-restricted`. `pull-up` is ignored: pinctrl sets the pulls |
 | `uart` | interrupt-driven API: RX into a per-port ring, TX from the caller's buffer through the TX-ready interrupt | replaces the single global ring of `ztoit.Uart`, which then becomes a wrapper or goes; no RTS/CTS, no RS-485 at first |
 | `spi` | `spi_transceive` on the matched controller | chip select is any `gpio.Pin`, driven by the primitive around the transfer, so Zephyr needs no patch for a run-time CS |
 

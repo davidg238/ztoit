@@ -21,6 +21,12 @@ if(CONFIG_TOIT)
   if(CONFIG_DT_HAS_TOIT_PLATFORM_ENABLED)
     list(APPEND toit_core ${T}/primitive_zephyr.cc ${T}/resources/pins_zephyr.cc
       ${T}/resources/gpio_zephyr.cc ${T}/event_sources/zephyr.cc)
+    # Toit's standard i2c library on the controllers a ztoit,buses node lists
+    # (dts/bindings/misc/ztoit,buses.yaml). The file compiles to nothing
+    # unless a child names sda and scl.
+    if(CONFIG_DT_HAS_ZTOIT_BUSES_ENABLED)
+      list(APPEND toit_core ${T}/resources/i2c_zephyr.cc)
+    endif()
   endif()
   set(toit_gc
     ${T}/third_party/dartino/object_memory.cc

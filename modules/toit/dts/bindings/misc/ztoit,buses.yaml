@@ -1,0 +1,25 @@
+# Copyright (C) 2026 Toit contributors.
+# SPDX-License-Identifier: Apache-2.0
+compatible: "ztoit,buses"
+description: |
+  The bus controllers Toit's standard libraries may open, each by the pin
+  numbers its pinctrl routes (ztoit#62; docs/design/zephyr-port.md, addendum
+  2026-11-27). One child per controller. Pin numbers are Toit's, 32 x port +
+  pin, as in toit,platform. A child's kind is the pins it names: sda and scl
+  make it I2C. Toit's i2c.Bus opens the child whose sda and scl are the pins
+  it is given. Pins are not re-routed: these properties must match the
+  controller's pinctrl.
+include: base.yaml
+child-binding:
+  description: One controller and the Toit pin numbers its pinctrl routes.
+  properties:
+    controller:
+      type: phandle
+      required: true
+      description: The bus controller.
+    sda:
+      type: int
+      description: I2C data pin.
+    scl:
+      type: int
+      description: I2C clock pin.
