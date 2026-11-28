@@ -10,8 +10,8 @@
   commit. `west` needs `~/zephyr-4.5/env.sh` and then ztoit's `env.sh`, in the same shell command.
 - **Tests:** `tools/test-qemu.py -d build-i62-qemu`: 383 of 436 (`tests/qemu/results-20261127e.txt`), ztoit's
   own as `ztoit/<name>`. Board tests are boot containers: `-DCONTAINERS=…/tests/board/x.toit`, no hyphen in the name.
-- **Awaiting David:** go for `uart`; #54: close it, or first add a way to read the UART drop count (the app
-  never closes its UART); is `obs/apps/once` = `erased` expected; restart a6b3's logger?; #37 resolder.
+- **Awaiting David:** go for `uart` (it must also let the app report the UART drop count: #54 stays
+  open until then); is `obs/apps/once` = `erased` expected; restart a6b3's logger?; #37 resolder.
   ktau must move to `import ztoit` and the current fork. Untouched: David's changes in `~/workspaceToit/vindriktning`.
 - **Decided:** standard libraries on devicetree-routed pins, bus pins as numbers, transfers on the VM thread,
   `toit,platform` + `ztoit,buses` nodes (zephyr-port.md, addendum 2026-11-27). Module and library are `ztoit`;
