@@ -1,0 +1,697 @@
+abstract-test PASS
+abstract2-test PASS
+abstract3-test PASS
+abstract4-test PASS
+abstract5-test PASS
+abstract6-test PASS
+aes-test PASS
+args-test PASS
+array-and-list-test TIMEOUT runner's timeout (tests/qemu/runner.toit)
+as-local-test PASS
+as-test PASS
+assert-test PASS
+assign-test PASS
+assign2-test PASS
+assign3-test PASS
+assign4-test PASS
+assign5-test PASS
+base64-test PASS
+big-byte-array-literal-test PASS
+bignum-test PASS
+binary-test PASS
+bit-count-test PASS
+bitmap-test-slow FAIL exit 1
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: bytemap-rectangle         <sdk>/bitmap.toit:316:3
+      1: bytemap-test              tests/bitmap-test-slow.toit:748:3
+      2: main                      tests/bitmap-test-slow.toit:21:3
+ble-advertisement-test PASS
+block-alias-test PASS
+block-test PASS
+block2-test PASS
+block3-test PASS
+block4-test PASS
+boolean-types-test PASS
+buffer-deprecated-test PASS
+buffer-pad-test PASS
+buffer-test PASS
+buffer2-test PASS
+buffer3-test PASS
+byte-array-test PASS
+byte-content-depth-test PASS
+byte-order-test PASS
+bytes-allocated-test PASS
+bytes-deprecated-test PASS
+call-test PASS
+captured-loop-test PASS
+captured-loop2-test PASS
+catch-test PASS
+channel-retention-test PASS
+class-colon-syntax-test PASS
+class-id-test PASS
+close-test PASS
+closing-at-dedent-test PASS
+coap-client-test PASS
+coap-tcp-client-test PASS
+coap-tcp-message-test PASS
+comparison-chaining-test PASS
+comparison-test PASS
+compiler-with-bool-flag-test PASS
+concurrency-test PASS
+conditional-test PASS
+constructor-keyword-test PASS
+constructor-super-test PASS
+constructor-super2-test PASS
+constructor-test PASS
+constructor2-test PASS same program as constructor-test
+constructor3-test PASS
+constructor4-test PASS
+containers-test FAIL exit 255
+    : Expected <1>, but was <101>
+    ASSERTION_FAILED error. 
+    Expected <1>, but was <101>
+      0: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      1: catch                     <sdk>/core/exceptions.toit:122:1
+      2: catch                     <sdk>/core/exceptions.toit:73:10
+      3: expect                    <sdk>/expect.toit:21:3
+      4: expect-equals             <sdk>/expect.toit:36:5
+      5: test-images               tests/containers-test.toit:23:3
+      6: main                      tests/containers-test.toit:17:3
+continue-label-test PASS
+crc-algorithms-test PASS
+crc-test PASS
+cron-test PASS
+cross-process-gc-test PASS
+crypto-aes-test PASS
+crypto-cmac-test PASS
+crypto-random-test PASS
+crypto-rsa-async-test-slow FAIL exit 1
+    [RSA 46130 ms] Testing concurrent RSA generation
+    [RSA 46130 ms] queued-0: submitting 1024-bit key generation
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: generate-init             tests/crypto-rsa-async-test-slow.toit:106:3
+      1: Generation                tests/crypto-rsa-async-test-slow.toit:79:14
+      2: test-concurrent-generation.<block>.<block> tests/crypto-rsa-async-test-slow.toit:32:35
+      3: SmallInteger_.repeat      <sdk>/core/numbers.toit:1319:3
+      4: test-concurrent-generation.<block> tests/crypto-rsa-async-test-slow.toit:32:7
+      5: test-concurrent-generation tests/crypto-rsa-async-test-slow.toit:27:1
+      6: main.<block>              tests/crypto-rsa-async-test-slow.toit:17:5
+      7: main                      tests/crypto-rsa-async-test-slow.toit:9:1
+crypto-rsa-test FAIL exit 1
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: primitive-redo-io-data_   <sdk>/io/io.toit:40:35
+      1: rsa-get-private-key-der_  <sdk>/crypto/rsa.toit:277:12
+      2: RsaKey.parse-private      <sdk>/crypto/rsa.toit:108:12
+      3: test-rsa                  tests/crypto-rsa-test.toit:60:11
+      4: main                      tests/crypto-rsa-test.toit:55:3
+crypto-test TIMEOUT runner's timeout (tests/qemu/runner.toit)
+crypto-vectors-test SKIP does not compile: crypto-vectors-test.toit:6:8: error: Package for prefix 'host' not found
+declaration-test PASS
+default-values-test PASS
+deque-test PASS
+directory-accounting-test SKIP does not compile: directory-accounting-test.toit:5:8: error: Package for prefix 'host' not found
+dns-abort-test PASS
+dns-test PASS
+dns-tools-test PASS
+dtoa-test PASS
+duration-parse-test PASS
+eager-global-test PASS
+ec618-base-api-test SKIP does not compile: ec618-base-api-test.toit:7:8: error: Package for prefix 'host' not found
+ec618-bus-output-test PASS
+ec618-bus-rig-test SKIP does not compile: hw/ec618/run-bus-rig.toit:5:8: error: Package for prefix 'cli' not found
+ec618-container-upload-test PASS
+ec618-framed-control-test PASS
+ec618-standalone-test PASS
+encode-error-proxy-test PASS
+encoder-cyclic-test PASS
+encoding-test PASS
+env-test SKIP does not compile: env-test.toit:6:8: error: Package for prefix 'host' not found
+equals-double-test PASS
+equals-test PASS
+escaped-newline-test PASS
+espnow-address-test PASS
+events-primitive-group-test PASS
+exception-test PASS
+exhaustive-hash-test-slow PASS
+export-test PASS
+export2-test PASS same program as export-test
+fib-test PASS
+field-setter-type-test PASS
+field-test PASS
+field2-test PASS
+field3-test PASS
+field4-test PASS
+finalizer-churn-test SKIP does not compile: finalizer-churn-test.toit:6:8: error: Package for prefix 'host' not found
+finalizer-leaks-test PASS
+finalizer-test PASS
+finally-params-test PASS
+firmware-config-test PASS
+firmware-map-test PASS
+fixed-point-test PASS
+fold-test PASS
+font-test PASS
+for-test PASS
+format-test PASS
+fun-colon-syntax-test PASS
+gc-compaction-overhang-test PASS
+getter-setter-test PASS
+global-parallel-test PASS
+global-parallel2-test PASS
+global-parallel3-test PASS
+global-side-test PASS
+global-test PASS
+hatch-test PASS
+hex-test PASS
+hostname-configured-test FAIL exit 1
+    EXCEPTION error. 
+    UNSUPPORTED
+      0: Bucket.open               <sdk>/system/storage.toit:103:20
+      1: Bucket.open               <sdk>/system/storage.toit:96:12
+      2: bucket_                   <sdk>/system/system.toit:21:28
+      3: run-global-initializer__.<block> <sdk>/core/objects.toit:291:28
+      4: run-global-initializer__  <sdk>/core/objects.toit:257:1
+      5: configured-hostname_      <sdk>/system/system.toit:310:18
+      6: test-config               tests/hostname-configured-test.toit:41:32
+      7: test-configured           tests/hostname-configured-test.toit:32:3
+      8: main                      tests/hostname-configured-test.toit:11:3
+hostname-test SKIP does not compile: hostname-test.toit:6:8: error: Package for prefix 'host' not found
+huge-array-test-slow PASS
+i2s-coordinator-test PASS
+i2s-pattern-test PASS
+i2s-run-output-test PASS
+i2s-stream-verifier-test PASS
+identical-custom-test PASS
+identical-test PASS
+if-condition-var-test PASS
+if-test PASS
+implicit-return-test PASS
+import-cache-test PASS
+import-dir-test PASS
+import1-test PASS
+import2-test PASS
+import3-test PASS
+import4-test PASS
+indentation-test PASS
+indentation2-test PASS
+indentation3-test PASS
+indentation4-test PASS
+indentation5-test PASS
+indentation6-test PASS
+indentation7-test PASS
+inflate-test FAIL exit 1
+    ***uncompressed-test
+    ***rle-test
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: rle-start_                <sdk>/zlib.toit:1280:3
+      1: RunLengthDeflateBackend_  <sdk>/zlib.toit:191:11
+      2: RunLengthZlibEncoder      <sdk>/zlib.toit:251:9
+      3: rle-test.<block>          tests/inflate-test.toit:63:24
+      4: round-trip-test.<block>   tests/inflate-test.toit:79:24
+      5: SmallInteger_.repeat      <sdk>/core/numbers.toit:1319:3
+      6: round-trip-test           tests/inflate-test.toit:77:5
+      7: rle-test                  tests/inflate-test.toit:63:3
+inheritance-resolution-test PASS
+instance-test PASS
+int-min-division-test PASS
+integer-wrap-around-test PASS
+interface-address-test PASS
+interface-test PASS
+interface2-test PASS
+interface3-test PASS
+interface4-test PASS
+interface4b-test PASS
+interface5-test PASS
+interface6-test PASS
+interface7-test PASS
+io-reader-index-of-test PASS
+io-reader-skip-up-to-test PASS
+io-reader-test PASS
+io-reader2-test PASS
+io-reader3-test PASS
+is-as-many-test PASS
+is-test PASS
+issue294-test PASS
+json-test PASS
+keepalive-test FAIL exit 1
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: tcp-get-option_           <sdk>/net/modules/tcp.toit:256:3
+      1: TcpSocket_.get-option_    <sdk>/net/modules/tcp.toit:93:12
+      2: TcpSocket.keep-alive      <sdk>/net/modules/tcp.toit:144:30
+      3: test-keep-alive.<block>   tests/keepalive-test.toit:20:32
+      4: with-server               tests/keepalive-test.toit:34:3
+      5: test-keep-alive           tests/keepalive-test.toit:16:3
+      6: main                      tests/keepalive-test.toit:13:3
+lambda-prefix-test PASS
+lambda-test PASS
+lambda2-test PASS
+lambda3-test PASS
+lambda4-test PASS
+lambda5-test PASS
+lambda6-test PASS
+line-wrap-test-slow SKIP does not compile: line-wrap-test-slow.toit:6:8: error: Package for prefix 'font-x11-adobe' not found
+list-test PASS
+literal-index-test PASS
+literal-test PASS
+literal2-test PASS
+log-test PASS
+long-prefix-chain-test PASS
+long-prefix-chain2-test PASS
+loop-branch-test PASS
+main-test PASS same program as hatch-test
+many-uses-test PASS
+map-rebuild-size-test PASS
+map-test PASS
+math-test PASS
+max-heap-size-test PASS
+message-encoder-bounds-test PASS
+message-encoding-size-test PASS
+mixin-field-test PASS
+mixin-field-type-test PASS
+mixin-field2-test PASS
+mixin-field3-test PASS
+mixin-final-field-test PASS
+mixin-interface-test PASS
+mixin-interface2-test PASS
+mixin-is-test PASS
+mixin-object-methods-test PASS
+mixin-order-test PASS
+mixin-overlap-test PASS
+mixin-super-test PASS
+mixin-super2-test PASS
+mixin-super3-test PASS
+mixin-super4-test PASS
+mixin-super5-test PASS
+mixin-super6-test PASS
+mixin-super7-test PASS
+mixin-test PASS
+mixin-this-scope-test PASS
+mixin-type-test PASS
+monitor-test PASS
+multi-line-comments-test PASS
+named-arg-test PASS
+named-boolean-test PASS
+named-constructor-test PASS
+named-constructor2-test PASS
+named-monitor-test PASS
+named-test PASS
+named3-test PASS
+named4-test PASS
+no-nl-class-test PASS
+no-nl-class2-test PASS
+no-nl-declaration-test PASS same program as no-nl-class-test
+no-nl-function-test PASS
+no-nl-test PASS
+no-nl2-test PASS same program as no-nl-test
+no-nl3-test PASS same program as no-nl-test
+non-local-branch-regression-test PASS
+non-local-branch-test PASS
+non-local-branch-types-test PASS
+non-local-branch2-test PASS
+non-local-branch3-test PASS
+non-local-branch4-test PASS
+non-local-return-wide-test PASS
+null-check-test PASS
+null-equals-test PASS
+null-string-test SKIP does not compile: null-string-test.toit:6:8: error: Package for prefix 'host' not found
+number-test FAIL exit 255
+    : Expected <179769313486231570814527423731704356798070567525844996598917476803157260780028538760589558632766878171540458953514382464234321326889464182768467546703537516986049910576551282076245490090389328944075868508455133942304583236903222948165808559332123348274797826204144723168738177180919299881250404026184124858368.0>, but was <179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0>
+    ASSERTION_FAILED error. 
+    Expected <17976931348623157081452742373170435679807056752584499659891747680315726078002853876058955863276687817154045895351438246423432132688946418276846754670353751698604991057655128207624549009038932894407586850845513394230458323690322294816580855933212...
+      0: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      1: catch                     <sdk>/core/exceptions.toit:122:1
+      2: catch                     <sdk>/core/exceptions.toit:73:10
+      3: expect                    <sdk>/expect.toit:21:3
+      4: expect-equals             <sdk>/expect.toit:36:5
+      5: test-float-stringify      tests/number-test.toit:651:3
+      6: main                      tests/number-test.toit:13:3
+object-encoder-list-test PASS
+object-histogram-test PASS
+operators-test PASS
+optional-monitor-test PASS
+optional-test PASS
+optional2-test PASS
+optional3-test PASS
+optional4-test PASS same program as constructor4-test
+overloading-test PASS
+override-return-type-test PASS
+override-test PASS
+parser-test PASS
+platform-test PASS
+precedence-test PASS
+prefixed-assign-test PASS
+primitive-bounds-test PASS
+primitive-results-test SKIP does not compile: primitive-results-test.toit:7:8: error: Package for prefix 'host' not found
+primitive-test PASS
+print-string-test PASS
+process-system-id-test PASS
+process-test-slow PASS
+program-name-test FAIL exit 255
+    : Expected <tests/program-name-test.toit>, but was <null>
+    ASSERTION_FAILED error. 
+    Expected <tests/program-name-test.toit>, but was <null>
+      0: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      1: catch                     <sdk>/core/exceptions.toit:122:1
+      2: catch                     <sdk>/core/exceptions.toit:73:10
+      3: expect                    <sdk>/expect.toit:21:3
+      4: expect-equals             <sdk>/expect.toit:36:5
+      5: main                      tests/program-name-test.toit:9:3
+program-path-test SKIP does not compile: program-path-test.toit:6:8: error: Package for prefix 'host' not found
+random-test PASS
+reader-test PASS
+reader-writer-test PASS
+reader2-test PASS
+rebuild-hash-index-test PASS
+registers-test PASS
+remove-finalizer-external-test PASS
+resource-state-callback-test PASS
+rmt-signals-test PASS
+rpc-reply-owner-test PASS
+rpc-test FAIL exit 255
+    Time per rpc.invoke = 90.7 us
+    .
+    ASSERTION_FAILED error.
+      0: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      1: catch                     <sdk>/core/exceptions.toit:122:1
+      2: catch                     <sdk>/core/exceptions.toit:73:10
+      3: expect                    <sdk>/expect.toit:21:3
+      4: test-timeouts             tests/rpc-test.toit:462:3
+      5: main                      tests/rpc-test.toit:56:3
+rpc-unowned-external-test PASS
+serialization-test PASS
+services-client-broker-test PASS
+services-client-death-cancel-test PASS
+services-client-ownership-test PASS
+services-close-test PASS
+services-discovery-race-test PASS
+services-extension-test PASS
+services-log-test PASS
+services-multi-test PASS
+services-network-test FAIL exit 1
+    EXCEPTION error. 
+    Connection refused
+      0: tcp-connect_              <sdk>/net/modules/tcp.toit:219:3
+      1: TcpSocket.connect         <sdk>/net/modules/tcp.toit:159:12
+      2: TcpSocket.connect         <sdk>/net/modules/tcp.toit:152:12
+      3: Client.tcp-connect        <sdk>/net/net.toit:167:12
+      4: Client.tcp-connect        <sdk>/net/net.toit:158:12
+      5: test-tcp-network          tests/services-network-test.toit:61:32
+      6: test-tcp                  tests/services-network-test.toit:55:3
+      7: main                      tests/services-network-test.toit:22:3
+services-notification-owner-test PASS
+services-notify-close-test PASS
+services-notify-test PASS
+services-print-test PASS
+services-provider-pin-test PASS
+services-resource-close-pressure-test PASS
+services-resource-test PASS
+services-simple-test PASS
+services-trace-test PASS
+services-uninstall-many-clients-test PASS
+services-watch-test PASS
+set-map-middle-gap-test PASS
+set-map-remove-first-test PASS
+set-map-test PASS
+setting-parameters-test PASS
+setting-parameters-types-test PASS
+shadowed-list-test PASS
+shortcut-test PASS
+sizes-test PASS
+sleep-mixed-test PASS
+sleep-test PASS
+slice-test PASS
+smi-min-divide-test PASS
+smi-subtract-overflow-test PASS
+socket-address-bounds-test FAIL exit 255
+    : Expected throw with <OUT_OF_BOUNDS>, but was <INVALID_ARGUMENT>
+    ASSERTION_FAILED error. 
+    Expected throw with <OUT_OF_BOUNDS>, but was <INVALID_ARGUMENT>
+      0: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      1: catch                     <sdk>/core/exceptions.toit:122:1
+      2: catch                     <sdk>/core/exceptions.toit:73:10
+      3: expect                    <sdk>/expect.toit:21:3
+      4: expect-throw              <sdk>/expect.toit:126:7
+      5: main.<block>.<block>      tests/socket-address-bounds-test.toit:15:7
+      6: SmallArray_.do_           <sdk>/core/collections.toit:954:3
+      7: List_.do                  <sdk>/core/collections.toit:1983:19
+      8: main.<block>              tests/socket-address-bounds-test.toit:13:23
+socket-address-equality-test PASS
+socket-close-test FAIL exit 1
+    EXCEPTION error. 
+    Not supported
+      0: tcp-close-write_          <sdk>/net/modules/tcp.toit:216:3
+      1: TcpSocket.close-writer_   <sdk>/net/modules/tcp.toit:201:5
+      2: CloseableOut_.close_      <sdk>/io/writer.toit:349:12
+      3: CloseableWriter.close.<block> <sdk>/io/writer.toit:219:7
+      4: CloseableWriter.close     <sdk>/io/writer.toit:216:3
+      5: close-connected-socket.<block> tests/socket-close-test.toit:32:16
+      6: with-server               tests/socket-close-test.toit:26:3
+      7: close-connected-socket    tests/socket-close-test.toit:29:3
+      8: main                      tests/socket-close-test.toit:13:3
+socket-option-test FAIL exit 1
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: tcp-get-option_           <sdk>/net/modules/tcp.toit:256:3
+      1: TcpSocket_.get-option_    <sdk>/net/modules/tcp.toit:93:12
+      2: TcpSocket.window-size     <sdk>/net/modules/tcp.toit:142:23
+      3: test-window-size.<block>  tests/socket-option-test.toit:25:22
+      4: with-server               tests/socket-option-test.toit:38:3
+      5: test-window-size          tests/socket-option-test.toit:22:3
+      6: main                      tests/socket-option-test.toit:17:3
+socket-task-test FAIL exit 1
+    RUN
+    DONE WRITER
+    EXCEPTION error. 
+    Not supported
+      0: tcp-close-write_          <sdk>/net/modules/tcp.toit:216:3
+      1: TcpSocket.close-writer_   <sdk>/net/modules/tcp.toit:201:5
+      2: CloseableOut_.close_      <sdk>/io/writer.toit:349:12
+      3: CloseableWriter.close.<block> <sdk>/io/writer.toit:219:7
+      4: CloseableWriter.close     <sdk>/io/writer.toit:216:3
+      5: writer                    tests/socket-task-test.toit:57:10
+      6: run-client.<lambda>       tests/socket-task-test.toit:42:10
+socket-test FAIL exit 1
+    EXCEPTION error. 
+    Not supported
+      0: tcp-close-write_          <sdk>/net/modules/tcp.toit:216:3
+      1: TcpSocket.close-writer_   <sdk>/net/modules/tcp.toit:201:5
+      2: CloseableOut_.close_      <sdk>/io/writer.toit:349:12
+      3: CloseableWriter.close.<block> <sdk>/io/writer.toit:219:7
+      4: CloseableWriter.close     <sdk>/io/writer.toit:216:3
+      5: blocking-send-test        tests/socket-test.toit:65:10
+      6: main                      tests/socket-test.toit:25:3
+socket-timeout-test FAIL exit 1
+    EXCEPTION error. 
+    INVALID_ARGUMENT
+      0: tcp-listen_               <sdk>/net/modules/tcp.toit:225:3
+      1: TcpServerSocket.listen    <sdk>/net/modules/tcp.toit:110:12
+      2: main                      tests/socket-timeout-test.toit:12:10
+spelled-logical-test PASS
+static-setter-test PASS
+static1-test PASS
+static2-test PASS
+static2b-test PASS
+static3-test PASS
+statistics-test PASS
+storage-test FAIL exit 1
+    EXCEPTION error. 
+    UNSUPPORTED
+      0: Bucket.open               <sdk>/system/storage.toit:103:20
+      1: Bucket.open               <sdk>/system/storage.toit:86:12
+      2: test-bucket-ram           tests/storage-test.toit:38:8
+      3: main                      tests/storage-test.toit:11:3
+string-flatmap-test PASS
+string-interpolation-test PASS
+string-large-literal-test PASS
+string-slice-test PASS
+string-test PASS
+string-trailing-test PASS
+string-type-test PASS
+string-write-to-byte-array-overlap-test PASS
+subprocess-wait-registration-test SKIP does not compile: subprocess-wait-registration-test.toit:6:8: error: Package for prefix 'host' not found
+super-test PASS
+super-this-test PASS
+syntax-test PASS
+system-message-malformed-test PASS
+system-watchdog-test PASS
+task-background-test PASS
+task-cancel-message-test PASS
+task-cancel-test PASS
+task-critical-region-test PASS
+task-group-test PASS
+task-receive-message-null-test PASS
+task-test PASS same program as hatch-test
+tcp-close-test PASS
+tcp-write-close-test TIMEOUT runner's timeout (tests/qemu/runner.toit)
+thread-test PASS
+time-test PASS
+timeout-test PASS
+tison-invalid-utf-8-test PASS
+tison-test PASS
+tison-word-size-test PASS
+tls-client-cert-test SKIP does not compile: tls-client-cert-test.toit:7:8: error: Package for prefix 'certificate-roots' not found
+tls-global-cert-simple-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 4:12
+      0: add-global-root-certificate_ <sdk>/tls/certificate.toit:103:1
+      1: add-global-certs          tests/tls-global-cert-simple-test.toit:128:3
+      2: main.<block>              tests/tls-global-cert-simple-test.toit:50:5
+      3: main                      tests/tls-global-cert-simple-test.toit:47:1
+tls-global-cert-test-slow FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 4:12
+      0: add-global-root-certificate_ <sdk>/tls/certificate.toit:103:1
+      1: add-global-certs          tests/tls-global-cert-test-slow.toit:191:3
+      2: main                      tests/tls-global-cert-test-slow.toit:58:3
+tls-no-net-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 44:0
+      0: x509-init_                <sdk>/net/x509.toit:24:1
+      1: x509-module_              <sdk>/net/x509.toit:5:17
+      2: run-global-initializer__.<block> <sdk>/core/objects.toit:291:28
+      3: run-global-initializer__  <sdk>/core/objects.toit:257:1
+      4: Certificate.parse         <sdk>/net/x509.toit:12:24
+      5: TEST-ROOT-CERT            tests/tls-no-net-test.toit:135:20
+      6: run-global-initializer__.<block> <sdk>/core/objects.toit:291:28
+      7: run-global-initializer__  <sdk>/core/objects.toit:257:1
+      8: main                      tests/tls-no-net-test.toit:22:26
+tls-primitive-error-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 4:0
+      0: tls-init_                 <sdk>/tls/session.toit:1171:1
+      1: test-error                tests/tls-primitive-error-test.toit:13:12
+      2: main                      tests/tls-primitive-error-test.toit:9:3
+tls-resume-session-test SKIP does not compile: tls-resume-session-test.toit:5:8: error: Package for prefix 'certificate-roots' not found
+tls-server-cert-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 44:0
+      0: x509-init_                <sdk>/net/x509.toit:24:1
+      1: x509-module_              <sdk>/net/x509.toit:5:17
+      2: run-global-initializer__.<block> <sdk>/core/objects.toit:291:28
+      3: run-global-initializer__  <sdk>/core/objects.toit:257:1
+      4: Certificate.parse         <sdk>/net/x509.toit:12:24
+      5: SERVER-CERTIFICATE        tests/tls-server-cert-test.toit:63:24
+      6: run-global-initializer__.<block> <sdk>/core/objects.toit:291:28
+      7: run-global-initializer__  <sdk>/core/objects.toit:257:1
+      8: main                      tests/tls-server-cert-test.toit:14:34
+tls-set-incoming-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 4:0
+      0: tls-init_                 <sdk>/tls/session.toit:1171:1
+      1: test-set-incoming         tests/tls-set-incoming-test.toit:20:12
+      2: main                      tests/tls-set-incoming-test.toit:10:3
+tls-system-cert-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 4:13
+      0: use-system-trusted-root-certificates <sdk>/tls/certificate.toit:117:1
+      1: add-global-certs          tests/tls-system-cert-test.toit:133:6
+      2: main                      tests/tls-system-cert-test.toit:46:3
+tls-test-slow SKIP does not compile: tls-test-slow.toit:5:8: error: Package for prefix 'certificate-roots' not found
+tls-ubuntu-test FAIL exit 1
+    EXCEPTION error. 
+    Connection refused
+      0: tcp-connect_              <sdk>/net/modules/tcp.toit:219:3
+      1: TcpSocket.connect         <sdk>/net/modules/tcp.toit:159:12
+      2: TcpSocket.connect         <sdk>/net/modules/tcp.toit:152:12
+      3: test-site                 tests/tls-ubuntu-test.toit:24:7
+      4: test-site-with-retry.<block>.<block> tests/tls-ubuntu-test.toit:16:7
+      5: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      6: catch                     <sdk>/core/exceptions.toit:122:1
+      7: catch                     <sdk>/core/exceptions.toit:85:10
+      8: test-site-with-retry.<block> tests/tls-ubuntu-test.toit:15:14
+      9: SmallInteger_.repeat      <sdk>/core/numbers.toit:1319:3
+tls2-test FAIL exit 1
+    EXCEPTION error. 
+    Connection refused
+      0: tcp-connect_              <sdk>/net/modules/tcp.toit:219:3
+      1: TcpSocket.connect         <sdk>/net/modules/tcp.toit:159:12
+      2: TcpSocket.connect         <sdk>/net/modules/tcp.toit:152:12
+      3: connect-to-site           tests/tls2-test.toit:159:7
+      4: connect-to-site-with-retry.<block>.<block> tests/tls2-test.toit:154:7
+      5: catch.<block>             <sdk>/core/exceptions.toit:124:10
+      6: catch                     <sdk>/core/exceptions.toit:122:1
+      7: catch                     <sdk>/core/exceptions.toit:85:10
+      8: connect-to-site-with-retry.<block> tests/tls2-test.toit:153:14
+      9: SmallInteger_.repeat      <sdk>/core/numbers.toit:1319:3
+tls3-test PASS
+toitdoc-escapes-test PASS same program as hatch-test
+toitdoc-tab-test PASS same program as hatch-test
+toitdoc-test PASS same program as hatch-test
+trailing-block-test PASS
+tree-shaken-fields-test PASS
+tree-shaking-test PASS
+try-finally-test PASS
+typed-local-test PASS
+types-test PASS
+types2-test PASS
+types3-test PASS
+uart-test SKIP does not compile: uart-test.toit:6:8: error: Package for prefix 'host' not found
+udp-reuse-port-test FAIL exit 1
+    EXCEPTION error. 
+    UNIMPLEMENTED
+      0: udp-set-option_           <sdk>/net/modules/udp.toit:342:3
+      1: Socket.multicast.<block>  <sdk>/net/modules/udp.toit:88:9
+      2: Socket.multicast          <sdk>/net/modules/udp.toit:72:3
+      3: Client.udp-open-multicast <sdk>/net/net.toit:120:12
+      4: test-reuse-port-binding   tests/udp-reuse-port-test.toit:61:22
+      5: main.<block>              tests/udp-reuse-port-test.toit:32:5
+      6: main                      tests/udp-reuse-port-test.toit:29:1
+udp-test FAIL exit 1
+    EXCEPTION error. 
+    Not enough space
+      0: Socket.send_              <sdk>/net/modules/udp.toit:263:10
+      1: Socket.write              <sdk>/net/modules/udp.toit:183:5
+      2: io-data-test              tests/udp-test.toit:113:10
+      3: main                      tests/udp-test.toit:21:3
+unary-test PASS
+undefined-global-test PASS
+undefined-local-test PASS
+undefined-loop-var-test PASS
+underscore-test PASS
+uninstantiated-classes-test PASS
+unix-socket-test PASS
+unreachable-test PASS
+utf-16-test PASS
+utf-8-test-slow PASS
+utils-test PASS
+uuid-test PASS
+valid-assignment-test PASS
+weak-map-cyclic-backing-test PASS
+weak-map-test PASS
+while-test PASS
+while-true-test PASS
+while2-test PASS
+wifi-leaker-test-slow PASS
+writer-test PASS
+x509-test FAIL exit 1
+    PRIMITIVE_LOOKUP_FAILED error. 
+    Failed to find primitive 44:0
+      0: x509-init_                <sdk>/net/x509.toit:24:1
+      1: x509-module_              <sdk>/net/x509.toit:5:17
+      2: run-global-initializer__.<block> <sdk>/core/objects.toit:291:28
+      3: run-global-initializer__  <sdk>/core/objects.toit:257:1
+      4: Certificate.parse         <sdk>/net/x509.toit:12:24
+      5: main                      tests/x509-test.toit:10:11
+yaml-test PASS
+zlib-deprecated-test SKIP does not compile: zlib-deprecated-test.toit:8:8: error: Package for prefix 'host' not found
+zlib-full-deprecated-test PASS
+zlib-full-test PASS
+zlib-glitch-test PASS
+zlib-gzip-test SKIP does not compile: zlib-gzip-test.toit:7:8: error: Package for prefix 'host' not found
+zlib-test SKIP does not compile: zlib-test.toit:8:8: error: Package for prefix 'host' not found
+zlib-uncompressed-test SKIP does not compile: zlib-uncompressed-test.toit:8:8: error: Package for prefix 'host' not found
+regress/integer-literal-width-test PASS
+regress/issue1027-test PASS
+regress/issue17-test PASS
+regress/issue18-test PASS
+regress/issue249-test PASS
+regress/issue2502-test PASS
+regress/issue2856-test PASS
+regress/issue3-test PASS
+regress/issue38-test PASS
+regress/issue4-test PASS
+# PASS 381 FAIL 30 TIMEOUT 3 CRASH 0 SKIP 20 of 434, 513 s
