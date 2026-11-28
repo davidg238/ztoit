@@ -44,6 +44,27 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
+	/* Toit's standard gpio library (#62): pin n is GPIO n. Zephyr's gpio0 has
+	 * GPIO0..29 (esp32c6_common.dtsi, ngpios = 30), so GPIO30 is no pin.
+	 * Reserved, needing --allow-restricted:
+	 *   3       the DO (gpio-leds `do0`, below)
+	 *   4, 5    strapping pins MTMS, MTDI (datasheet, "Strapping Pins")
+	 *   6, 7    i2c0 SDA, SCL (board pinctrl i2c0_default), the BMP180's bus
+	 *   8       strapping pin; the WS2812's data line (i2s_led_default, below)
+	 *   9       strapping pin (boot mode); BOOT button (gpio-keys `user_button1`)
+	 *   12, 13  USB Serial/JTAG D-, D+ (USB_INT_PHY0_DM/DP_GPIO_NUM)
+	 *   15      strapping pin (JTAG source)
+	 *   16, 17  UART0 TX, RX: the console (board pinctrl uart0_default)
+	 *   24..29  the module's SPI flash (IO_MUX SPICS0, SPIQ, SPIWP, VDD_SPI,
+	 *           SPIHD, SPICLK; SPID on GPIO30)
+	 * Free: 0, 1, 2, 10, 11, 14, 18..23 (spi2 is disabled below, and this
+	 * overlay's i2s pinctrl routes only GPIO8). */
+	toit-platform {
+		compatible = "toit,platform";
+		gpio-ports = <&gpio0>;
+		reserved-pins = <3 4 5 6 7 8 9 12 13 15 16 17 24 25 26 27 28 29>;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 		do0: do_0 {

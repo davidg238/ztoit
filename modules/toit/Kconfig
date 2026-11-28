@@ -9,6 +9,7 @@ config TOIT
 	select PSA_WANT_ECC_SECP_R1_256
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select GPIO if DT_HAS_TOIT_PLATFORM_ENABLED
 	help
 	  Compile the Toit VM core from $TOIT_SRC (see ztoit's env.sh).
 	  The PSA_WANT selects pick the Mbed TLS 4 legacy modules the VM links
@@ -16,6 +17,8 @@ config TOIT
 	  bignum). They are selects, not conf lines, because OpenThread's default
 	  security config makes those symbols promptless, and a conf line is then
 	  ignored (ztoit #47).
+	  A toit,platform devicetree node (ztoit#62) brings in the GPIO
+	  driver, which Toit's gpio library uses.
 
 config TOIT_CRYPTO
 	bool "The VM's crypto primitives: SHA-1/2, AES, AES-GCM, ChaCha20-Poly1305"

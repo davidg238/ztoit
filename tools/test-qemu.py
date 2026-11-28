@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Run Toit's core tests on the Zephyr port under QEMU (ztoit#61).
 
-    tools/test-qemu.py [-o results.txt] [test ...]
+    tools/test-qemu.py [-o results.txt] [-d build-dir] [test ...]
 
 A test is named by its path under the fork's tests/ without .toit
-(`block-test`, `regress/issue17-test`); none named runs every upstream test
-that toit.run starts without flags: tests/*-test.toit, *-test-slow.toit and
-the same in regress/ (tests/CMakeLists.txt; -force, -no-boot and -compiler
-tests need toit.run options or the host compiler).
+(`block-test`, `regress/issue17-test`), or ztoit's own tests/qemu/*-test.toit
+as `ztoit/<name>` (`ztoit/gpio-test`, the port's devices under the board's
+emulators); none named runs every upstream test that toit.run starts without
+flags: tests/*-test.toit, *-test-slow.toit and the same in regress/
+(tests/CMakeLists.txt; -force, -no-boot and -compiler tests need toit.run
+options or the host compiler), then ztoit's.
 
 Each test is compiled here, unmodified, to a relocatable image; a firmware
 for qemu_riscv32 holds BATCH of them with tests/qemu/runner.toit, which starts
@@ -29,9 +31,10 @@ import sys
 import time
 
 ZTOIT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD = os.path.join(ZTOIT, "build-t61-qemu")
+BUILD = os.path.join(ZTOIT, "build-t61-qemu")  # -d replaces it
 WORK = os.path.join(BUILD, "work")       # the copied tests/ and the images
 RUNNER = os.path.join(ZTOIT, "tests", "qemu", "runner.toit")
+OWN = os.path.join(ZTOIT, "tests", "qemu")  # ztoit's tests, run as ztoit/<name>
 # Real seconds a test may run before the VM counts as hung. The runner's own
 # timeout (runner.toit's TIMEOUT, virtual time) normally fires well before.
 HUNG_S = 300
@@ -57,6 +60,9 @@ def all_tests(tests_dir):
         for f in sorted(os.listdir(os.path.join(tests_dir, sub))):
             if re.search(r"-test(-slow)?\.toit$", f):
                 names.append(os.path.join(sub, f[:-len(".toit")]))
+    for f in sorted(os.listdir(OWN)):
+        if re.search(r"-test\.toit$", f):
+            names.append("ztoit/" + f[:-len(".toit")])
     return names
 
 
@@ -68,6 +74,11 @@ def copy_tests(tests_dir):
     shutil.copytree(tests_dir, os.path.join(WORK, "tests"), symlinks=True)
     for f in ("package.lock", "package.yaml"):
         os.remove(os.path.join(WORK, "tests", f))
+    own = os.path.join(WORK, "tests", "ztoit")
+    os.makedirs(own)
+    for f in os.listdir(OWN):
+        if f.endswith(".toit") and f != "runner.toit":
+            shutil.copy(os.path.join(OWN, f), own)
 
 
 def compile_test(toit, name):
@@ -193,9 +204,16 @@ def boot(batch, snapshots, toit, log, results):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("-o", "--output", default=os.path.join(BUILD, "results.txt"))
+    parser.add_argument("-o", "--output")
+    parser.add_argument("-d", "--build-dir", help="the build directory (default build-t61-qemu)")
     parser.add_argument("tests", nargs="*")
     args = parser.parse_args()
+    global BUILD, WORK
+    if args.build_dir:
+        BUILD = os.path.abspath(args.build_dir)
+        WORK = os.path.join(BUILD, "work")
+    if not args.output:
+        args.output = os.path.join(BUILD, "results.txt")
     toit = env("TOIT_HOST")
     fork = env("TOIT_SRC")
     tests_dir = os.path.join(fork, "tests")

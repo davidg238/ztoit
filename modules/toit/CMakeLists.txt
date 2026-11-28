@@ -9,12 +9,19 @@ if(CONFIG_TOIT)
   # points. Platform variants compile to nothing behind their own #ifdefs.
   file(GLOB toit_core ${T}/*.cc)
   list(FILTER toit_core EXCLUDE REGEX
-    "/(toit|toit_run|toit_run_image|vessel|run|main_utf_8_helper|error_win|toit_esp32|toit_ec618)\\.cc$")
+    "/(toit|toit_run|toit_run_image|vessel|run|main_utf_8_helper|error_win|toit_esp32|toit_ec618|primitive_zephyr)\\.cc$")
   list(APPEND toit_core ${T}/event_sources/timer.cc ${T}/resources/timer.cc
     ${T}/event_sources/zsock_zephyr.cc ${T}/resources/udp_zephyr.cc ${T}/resources/tcp_zephyr.cc
     ${T}/event_sources/zephyr_keys.cc ${T}/resources/ztoit.cc
     ${T}/event_sources/ble_udp_zephyr.cc ${T}/resources/udp_ble.cc
     ${T}/resources/image.cc)
+  # Toit's standard gpio library, when the board's devicetree has a
+  # toit,platform node (dts/bindings/misc/toit,platform.yaml, ztoit#62).
+  # Without it the gpio primitives stay unlinked: PRIMITIVE_LOOKUP_FAILED.
+  if(CONFIG_DT_HAS_TOIT_PLATFORM_ENABLED)
+    list(APPEND toit_core ${T}/primitive_zephyr.cc ${T}/resources/pins_zephyr.cc
+      ${T}/resources/gpio_zephyr.cc ${T}/event_sources/zephyr.cc)
+  endif()
   set(toit_gc
     ${T}/third_party/dartino/object_memory.cc
     ${T}/third_party/dartino/object_memory_copying.cc

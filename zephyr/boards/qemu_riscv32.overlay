@@ -1,0 +1,36 @@
+/* QEMU test build (ztoit#61, #62): two emulated GPIO controllers for Toit's
+ * standard gpio library, so pin numbers 0..7 are port 0 and 32..39 port 1
+ * (32 x port + pin, the toit,platform rule). tests/qemu/gpio-join.c wires
+ * pin 0 to pin 33; tests/qemu/gpio-test.toit uses them. */
+/ {
+	gpio_emul0: gpio-emul-0 {
+		compatible = "zephyr,gpio-emul";
+		status = "okay";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		rising-edge;
+		falling-edge;
+	};
+
+	gpio_emul1: gpio-emul-1 {
+		compatible = "zephyr,gpio-emul";
+		status = "okay";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		rising-edge;
+		falling-edge;
+	};
+
+	toit-platform {
+		compatible = "toit,platform";
+		gpio-ports = <&gpio_emul0 &gpio_emul1>;
+		/* Stands for a board's flash or console pin: needs --allow-restricted. */
+		reserved-pins = <7>;
+	};
+
+	zephyr,user {
+		wire-gpios = <&gpio_emul0 0 0>, <&gpio_emul1 1 0>;
+	};
+};
